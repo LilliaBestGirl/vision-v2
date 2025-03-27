@@ -56,6 +56,7 @@ class MainActivity : ComponentActivity() {
 
             val analyzer = remember {
                 FrameAnalyzer(
+                    context = applicationContext,
                     detector = ObjectDetectorModel(
                         context = applicationContext
                     ),

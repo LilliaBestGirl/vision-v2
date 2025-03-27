@@ -6,9 +6,6 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.util.Log
-import android.view.Surface
-import android.view.WindowManager
-import androidx.core.content.ContextCompat
 import com.example.visionv2.data.ModelOutput
 import com.example.visionv2.domain.Detector
 import org.tensorflow.lite.Interpreter
@@ -37,6 +34,7 @@ class ObjectDetectorModel(
         // Resize and normalize the input
         val inputBuffer = preprocessBitmap(bitmap)
 
+
         // Output array
         val outputBuffer = Array(1) { Array(25200) { FloatArray(12) } }
 
@@ -46,8 +44,9 @@ class ObjectDetectorModel(
             mapOf(0 to outputBuffer)
         )
 
+        val rawResults = parseResults(outputBuffer)
 
-        return parseResults(outputBuffer)
+        return nonMaxSuppression(rawResults)
     }
 
     private val labelMap: Map<String, String> = loadLabels(context)
@@ -140,8 +139,8 @@ class ObjectDetectorModel(
             val objectness = box[4]
             if (objectness < 0.3) continue
 
-            val centerX = (box[0] * 640 - xOffset) / scale
             val centerY = (box[1] * 640 - yOffset) / scale
+            val centerX = (box[0] * 640 - xOffset) / scale
             val width = (box[2] * 640) / scale
             val height = (box[3] * 640) / scale
 
