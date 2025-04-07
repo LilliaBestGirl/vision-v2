@@ -73,4 +73,7 @@ dependencies {
     implementation("org.tensorflow:tensorflow-lite-gpu-delegate-plugin:0.4.0")
     implementation("org.tensorflow:tensorflow-lite-gpu:2.9.0")
     implementation("org.tensorflow:tensorflow-lite-select-tf-ops:2.9.0")
+
+    // ARCore
+    implementation("com.google.ar:core:1.42.0")
 }

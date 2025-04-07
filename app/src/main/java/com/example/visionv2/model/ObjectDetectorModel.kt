@@ -8,6 +8,7 @@ import android.graphics.Paint
 import android.util.Log
 import com.example.visionv2.data.ModelOutput
 import com.example.visionv2.domain.Detector
+import com.google.ar.core.ArCoreApk
 import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.support.common.FileUtil
 import java.nio.ByteBuffer
@@ -34,7 +35,6 @@ class ObjectDetectorModel(
         // Resize and normalize the input
         val inputBuffer = preprocessBitmap(bitmap)
 
-
         // Output array
         val outputBuffer = Array(1) { Array(25200) { FloatArray(12) } }
 
@@ -45,6 +45,9 @@ class ObjectDetectorModel(
         )
 
         val rawResults = parseResults(outputBuffer)
+
+        val arCoreAvailability = ArCoreApk.getInstance().checkAvailability(context)
+        Log.d("ARCore", "ARCore Availability: $arCoreAvailability")
 
         return nonMaxSuppression(rawResults)
     }
@@ -86,22 +89,24 @@ class ObjectDetectorModel(
         val originalWidth = bitmap.width
         val originalHeight = bitmap.height
 
-        Log.d("Preprocess", "Original Size: $originalWidth x $originalHeight")
-
         // Scale while preserving aspect ratio
         scale = min(targetSize.toFloat() / originalWidth, targetSize.toFloat() / originalHeight)
         val newWidth = (originalWidth * scale).toInt()
         val newHeight = (originalHeight * scale).toInt()
 
-        Log.d("Preprocess", "New Size: $newWidth x $newHeight")
+        Log.d("ImageDimensions", "Original: $originalWidth x $originalHeight")
+        Log.d("ImageDimensions", "Scaled: $newWidth x $newHeight")
 
         val resizedBitmap = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
 
         // Calculate padding for letterboxing
-        xOffset = floor((targetSize - newWidth) / 2f).toInt()
-        yOffset = floor((targetSize - newHeight) / 2f).toInt()
+        xOffset = (targetSize - newWidth) / 2
+        yOffset = (targetSize - newHeight) / 2
 
-        val paddedBitmap = Bitmap.createBitmap(targetSize, targetSize, Bitmap.Config.ARGB_8888)
+        Log.d("Resize Debug", "Original: ${originalWidth}x${originalHeight}, Scale: $scale, Resized: ${newWidth}x${newHeight}")
+        Log.d("Padding Debug", "xOffset: $xOffset, yOffset: $yOffset")
+
+        val paddedBitmap = Bitmap.createBitmap(targetSize, targetSize, Bitmap.Config.RGB_565)
         val canvas = Canvas(paddedBitmap)
         val paint = Paint(Paint.FILTER_BITMAP_FLAG)
 
@@ -113,6 +118,8 @@ class ObjectDetectorModel(
 
         val intValues = IntArray(targetSize * targetSize)
         paddedBitmap.getPixels(intValues, 0, targetSize, 0, 0, targetSize, targetSize)
+
+        Log.d("Padded Bitmap", "${paddedBitmap.width} x ${paddedBitmap.height}")
 
         for (pixel in intValues) {
             val r = (pixel shr 16 and 0xFF) / 255.0f
@@ -127,7 +134,6 @@ class ObjectDetectorModel(
         return inputBuffer
     }
 
-
     private fun parseResults(
         outputBuffer: Array<Array<FloatArray>>
     ): List<ModelOutput> {
@@ -139,10 +145,12 @@ class ObjectDetectorModel(
             val objectness = box[4]
             if (objectness < 0.3) continue
 
-            val centerY = (box[1] * 640 - yOffset) / scale
             val centerX = (box[0] * 640 - xOffset) / scale
+            val centerY = (box[1] * 640 - yOffset) / scale
             val width = (box[2] * 640) / scale
             val height = (box[3] * 640) / scale
+
+            // Log.d("Normalized", "Normalized Boxes: ${box[0]}, ${box[1]}, ${box[2]}, ${box[3]}")
 
             val left = centerX - width / 2
             val top = centerY - height / 2

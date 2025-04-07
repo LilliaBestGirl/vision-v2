@@ -5,6 +5,7 @@ import android.util.Size
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
+import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
@@ -20,12 +21,6 @@ class CameraController(
 ) {
 
     private val cameraExecutor = Executors.newSingleThreadExecutor()
-
-//    private val resolutionSelector = ResolutionSelector.Builder()
-//        .setResolutionStrategy(
-//            ResolutionStrategy.HIGHEST_AVAILABLE_STRATEGY
-//        )
-//        .build()
 
     private val imageAnalysis = ImageAnalysis.Builder()
         .setTargetResolution(Size(screenWidth.toInt(), screenHeight.toInt()))
