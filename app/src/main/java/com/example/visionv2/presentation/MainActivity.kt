@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.graphics.Paint
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
@@ -40,16 +41,55 @@ import com.example.visionv2.model.ObjectDetectorModel
 import com.example.visionv2.presentation.camera.CameraController
 import com.example.visionv2.presentation.camera.CameraPreview
 import com.example.visionv2.ui.theme.VISIONV2Theme
+import com.google.ar.core.ArCoreApk
+import com.google.ar.core.Session
+import com.google.ar.core.exceptions.UnavailableException
 
 class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+
+    private var installRequested = false
+    private var session: Session? = null
+
+    override fun onResume() {
+        super.onResume()
+
+        Log.d("Lifecycle", "onResume called")
 
         if (!hasCameraPermission()) {
             ActivityCompat.requestPermissions(
                 this, arrayOf(Manifest.permission.CAMERA), 0
             )
+            return
         }
+
+        try {
+            when (ArCoreApk.getInstance().requestInstall(this, !installRequested)) {
+                ArCoreApk.InstallStatus.INSTALL_REQUESTED -> {
+                    installRequested = true
+                    return
+                }
+
+                ArCoreApk.InstallStatus.INSTALLED -> {
+                    installRequested = false
+
+                    if (session == null) {
+                        session = Session(this)
+                        Log.d("ARCoreInstall", "ARCore session installed successfully")
+                    }
+
+                    session?.resume()
+                    Log.d("ARCore", "Session resumed")
+                }
+            }
+        } catch (e: UnavailableException) {
+            Log.e("ARCore", "ARCore not available: ${e.message}")
+            Toast.makeText(this, "ARCore is required for this app to run", Toast.LENGTH_LONG).show()
+            finish()
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
 
         setContent {
             val configuration = LocalConfiguration.current
@@ -70,6 +110,7 @@ class MainActivity : ComponentActivity() {
                     ),
                     screenWidth = screenWidth,
                     screenHeight = screenHeight,
+                    arSession = session,
                     onResults = { detections = it }
                 )
             }
@@ -95,10 +136,10 @@ fun BoundingBoxCanvas(detections: List<ModelOutput>) {
     Canvas(modifier = Modifier.fillMaxSize()) {
 
         detections.forEach { detection ->
-            val left = detection.left
-            val top = detection.top
-            val right = detection.right
-            val bottom = detection.bottom
+            val left = detection.centerX - detection.width / 2
+            val top = detection.centerY - detection.height / 2
+            val right = detection.centerX + detection.width / 2
+            val bottom = detection.centerY + detection.height / 2
 
             val score = String.format("%.2f", detection.score)
 
@@ -127,21 +168,4 @@ fun BoundingBoxCanvas(detections: List<ModelOutput>) {
             }
         }
     }
-}
-
-@Preview
-@Composable
-fun BoundingBoxPreview() {
-    val mockDetections = listOf(
-        ModelOutput(
-            left = 0.1f, top = 0.1f, right = 0.4f, bottom = 0.4f,
-            score = 0.85f, classId = 1, name = "Person"
-        ),
-        ModelOutput(
-            left = 0.5f, top = 0.2f, right = 0.8f, bottom = 0.5f,
-            score = 0.92f, classId = 2, name = "Dog"
-        )
-    )
-
-    BoundingBoxCanvas(mockDetections)
 }

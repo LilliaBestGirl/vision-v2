@@ -14,7 +14,6 @@ import org.tensorflow.lite.support.common.FileUtil
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.MappedByteBuffer
-import kotlin.math.floor
 import kotlin.math.min
 
 class ObjectDetectorModel(
@@ -89,7 +88,6 @@ class ObjectDetectorModel(
         val originalWidth = bitmap.width
         val originalHeight = bitmap.height
 
-        // Scale while preserving aspect ratio
         scale = min(targetSize.toFloat() / originalWidth, targetSize.toFloat() / originalHeight)
         val newWidth = (originalWidth * scale).toInt()
         val newHeight = (originalHeight * scale).toInt()
@@ -99,7 +97,6 @@ class ObjectDetectorModel(
 
         val resizedBitmap = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
 
-        // Calculate padding for letterboxing
         xOffset = (targetSize - newWidth) / 2
         yOffset = (targetSize - newHeight) / 2
 
@@ -110,7 +107,7 @@ class ObjectDetectorModel(
         val canvas = Canvas(paddedBitmap)
         val paint = Paint(Paint.FILTER_BITMAP_FLAG)
 
-        canvas.drawColor(Color.BLACK) // Fill background with black
+        canvas.drawColor(Color.BLACK)
         canvas.drawBitmap(resizedBitmap, xOffset.toFloat(), yOffset.toFloat(), paint)
 
         val inputBuffer = ByteBuffer.allocateDirect(targetSize * targetSize * 3 * 4)
@@ -139,7 +136,7 @@ class ObjectDetectorModel(
     ): List<ModelOutput> {
         val results = mutableListOf<ModelOutput>()
 
-        for (i in 0 until 25200) { // 25200 grid cells
+        for (i in 0 until 25200) {
             val box = outputBuffer[0][i]
 
             val objectness = box[4]
@@ -150,27 +147,18 @@ class ObjectDetectorModel(
             val width = (box[2] * 640) / scale
             val height = (box[3] * 640) / scale
 
-            // Log.d("Normalized", "Normalized Boxes: ${box[0]}, ${box[1]}, ${box[2]}, ${box[3]}")
-
-            val left = centerX - width / 2
-            val top = centerY - height / 2
-            val right = centerX + width / 2
-            val bottom = centerY + height / 2
-
-            // Get class scores (5 to 12 because we have 7 classes)
             val classScores = box.sliceArray(5 until 12)
             val maxClassIndex = classScores.indices.maxByOrNull { classScores[it] } ?: -1
-//            val maxClassScore = if (maxClassIndex != -1) classScores[maxClassIndex] else 0f
 
             val classId = idMap.getOrNull(maxClassIndex) ?: "Unknown"
             val label = labelMap[classId] ?: "Unknown"
 
             results.add(
                 ModelOutput(
-                    left = left,
-                    top = top,
-                    right = right,
-                    bottom = bottom,
+                    centerX = centerX,
+                    centerY = centerY,
+                    width = width,
+                    height = height,
                     score = objectness,
                     classId = maxClassIndex,
                     name = label

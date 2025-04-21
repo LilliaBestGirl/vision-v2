@@ -29,17 +29,28 @@ private fun iou(
     box1: ModelOutput,
     box2: ModelOutput,
 ): Float {
-    val x1 = max(box1.left, box2.left)
-    val y1 = max(box1.top, box2.top)
-    val x2 = min(box1.right, box2.right)
-    val y2 = min(box1.bottom, box2.bottom)
+
+    val box1Left = box1.centerX - box1.width / 2
+    val box1Top = box1.centerY - box1.height / 2
+    val box1Right = box1.centerX + box1.width / 2
+    val box1Bottom = box1.centerY + box1.height / 2
+
+    val box2Left = box2.centerX - box2.width / 2
+    val box2Top = box2.centerY - box2.height / 2
+    val box2Right = box2.centerX + box2.width / 2
+    val box2Bottom = box2.centerY + box2.height / 2
+
+    val x1 = max(box1Left, box2Left)
+    val y1 = max(box1Top, box2Top)
+    val x2 = min(box1Right, box2Right)
+    val y2 = min(box1Bottom, box2Bottom)
 
     val intersectionWidth = max(0f, x2 - x1)
     val intersectionHeight = max(0f, y2 - y1)
     val intersectionArea = intersectionWidth * intersectionHeight
 
-    val box1Area = (box1.right - box1.left) * (box1.bottom - box1.top)
-    val box2Area = (box2.right - box2.left) * (box2.bottom - box2.top)
+    val box1Area = (box1Right - box1Left) * (box1Bottom - box1Top)
+    val box2Area = (box2Right - box2Left) * (box2Bottom - box2Top)
 
     val unionArea = box1Area + box2Area - intersectionArea
 

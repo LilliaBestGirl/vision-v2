@@ -15,6 +15,7 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import com.example.visionv2.data.ModelOutput
 import com.example.visionv2.model.ObjectDetectorModel
+import com.google.ar.core.Session
 import java.io.ByteArrayOutputStream
 import kotlin.math.min
 
@@ -23,6 +24,7 @@ class FrameAnalyzer(
     private val onResults: (List<ModelOutput>) -> Unit,
     private val screenWidth: Float,
     private val screenHeight: Float,
+    private val arSession: Session?,
     private val detector: ObjectDetectorModel
 ) : ImageAnalysis.Analyzer {
 
@@ -43,8 +45,10 @@ class FrameAnalyzer(
 
                 val results = detector.detect(resizedBitmap)
 
+                DepthAPI(results, arSession, screenWidth, screenHeight)
+
                 if (results.isNotEmpty()) {
-                    ttsHelper.speak("${results[0].name} detected")
+                    ttsHelper.speak("${results[0].name} detected, ${results[0].distance} meters away")
                 }
 
                 onResults(results)
