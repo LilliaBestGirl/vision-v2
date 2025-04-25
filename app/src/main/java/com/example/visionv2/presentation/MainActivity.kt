@@ -2,58 +2,41 @@ package com.example.visionv2.presentation
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.graphics.Paint
+import android.opengl.GLSurfaceView
+import android.opengl.GLSurfaceView.Renderer
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.visionv2.data.ModelOutput
-import com.example.visionv2.domain.FrameAnalyzer
-import com.example.visionv2.model.ObjectDetectorModel
-import com.example.visionv2.presentation.camera.CameraController
-import com.example.visionv2.presentation.camera.CameraPreview
-import com.example.visionv2.ui.theme.VISIONV2Theme
+import com.example.visionv2.domain.ARRenderer
 import com.google.ar.core.ArCoreApk
+import com.google.ar.core.Config
 import com.google.ar.core.Session
 import com.google.ar.core.exceptions.UnavailableException
 
 class MainActivity : ComponentActivity() {
 
-    private var installRequested = false
-    private var session: Session? = null
+    var installRequested = false
+    private lateinit var session: Session
+    private lateinit var glSurfaceView: GLSurfaceView
+    private lateinit var renderer: ARRenderer
 
     override fun onResume() {
         super.onResume()
-
-        Log.d("Lifecycle", "onResume called")
 
         if (!hasCameraPermission()) {
             ActivityCompat.requestPermissions(
@@ -72,60 +55,86 @@ class MainActivity : ComponentActivity() {
                 ArCoreApk.InstallStatus.INSTALLED -> {
                     installRequested = false
 
-                    if (session == null) {
+                    if (!::session.isInitialized) {
                         session = Session(this)
-                        Log.d("ARCoreInstall", "ARCore session installed successfully")
+                        Log.d("ARCore", "Session initialized")
                     }
 
-                    session?.resume()
-                    Log.d("ARCore", "Session resumed")
+                    val config = Config(session)
+                    config.depthMode = Config.DepthMode.AUTOMATIC
+                    session.configure(config)
+
+                    // Initialize renderer *now that session exists*
+                    renderer = ARRenderer(session)
+                    glSurfaceView.setRenderer(renderer)
+                    glSurfaceView.renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY
+
+                    session.setCameraTextureName(renderer.getTextureId())
+                    glSurfaceView.onResume()
+                    session.resume()
+
+                    Log.d("ARCore", "Session resumed with renderer")
                 }
             }
         } catch (e: UnavailableException) {
             Log.e("ARCore", "ARCore not available: ${e.message}")
-            Toast.makeText(this, "ARCore is required for this app to run", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "ARCore is required", Toast.LENGTH_LONG).show()
             finish()
         }
     }
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        setContent {
-            val configuration = LocalConfiguration.current
-            val density = LocalDensity.current
+        glSurfaceView = GLSurfaceView(this)
+        glSurfaceView.setEGLContextClientVersion(2)
 
-            val screenWidth = with(density) { configuration.screenWidthDp.dp.toPx() }
-            val screenHeight = with(density) { configuration.screenHeightDp.dp.toPx() }
+        setContentView(glSurfaceView)
 
-            var detections by remember {
-                mutableStateOf(emptyList<ModelOutput>())
-            }
-
-            val analyzer = remember {
-                FrameAnalyzer(
-                    context = applicationContext,
-                    detector = ObjectDetectorModel(
-                        context = applicationContext
-                    ),
-                    screenWidth = screenWidth,
-                    screenHeight = screenHeight,
-                    arSession = session,
-                    onResults = { detections = it }
-                )
-            }
-
-            val controller = CameraController(applicationContext, analyzer, screenWidth, screenHeight)
-
-            VISIONV2Theme {
-                Box(Modifier.fillMaxSize()) {
-                    CameraPreview(controller, modifier = Modifier.fillMaxSize())
-
-                    BoundingBoxCanvas(detections)
-                }
-            }
-        }
+//        setContent {
+//            val configuration = LocalConfiguration.current
+//            val density = LocalDensity.current
+//
+//            val screenWidth = with(density) { configuration.screenWidthDp.dp.toPx() }
+//            val screenHeight = with(density) { configuration.screenHeightDp.dp.toPx() }
+//
+//            var detections = remember {
+//                mutableStateListOf<ModelOutput>()
+//            }
+//
+//            val analyzer = remember {
+//                FrameAnalyzer(
+//                    context = applicationContext,
+//                    detector = ObjectDetectorModel(
+//                        context = applicationContext
+//                    ),
+//                    screenWidth = screenWidth,
+//                    screenHeight = screenHeight,
+//                    onResults = {
+//                        detections.clear()
+//                        detections.addAll(it)
+//                    }
+//                )
+//            }
+//
+//            val controller = CameraController(applicationContext, analyzer, screenWidth, screenHeight)
+//
+//            VISIONV2Theme {
+//                Box(Modifier.fillMaxSize()) {
+//                    GLView(
+//                        onSurfaceReady = { surface -> glSurfaceView = surface },
+//                        renderer = renderer
+//                    )
+//
+//                    CameraPreview(controller, modifier = Modifier.fillMaxSize())
+//
+//                    BoundingBoxCanvas(detections)
+//                }
+//            }
+//        }
     }
+
     private fun hasCameraPermission() = ContextCompat.checkSelfPermission(
         this, Manifest.permission.CAMERA
     ) == PackageManager.PERMISSION_GRANTED

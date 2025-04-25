@@ -1,5 +1,8 @@
 package com.example.visionv2.data
 
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
+
 data class ModelOutput(
     val centerX: Float,
     val centerY: Float,
@@ -8,5 +11,5 @@ data class ModelOutput(
     val score: Float,
     val classId: Int,
     val name: String,
-    var distance: Float? = null,
+    var distance: MutableState<Float?> = mutableStateOf(null)
 )

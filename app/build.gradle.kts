@@ -76,4 +76,8 @@ dependencies {
 
     // ARCore
     implementation("com.google.ar:core:1.42.0")
+
+    // Sceneform
+    implementation("com.gorisse.thomas.sceneform:sceneform:1.23.0")
+    implementation("com.google.ar.sceneform:core:1.17.1")
 }

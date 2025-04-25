@@ -24,7 +24,6 @@ class FrameAnalyzer(
     private val onResults: (List<ModelOutput>) -> Unit,
     private val screenWidth: Float,
     private val screenHeight: Float,
-    private val arSession: Session?,
     private val detector: ObjectDetectorModel
 ) : ImageAnalysis.Analyzer {
 
@@ -45,10 +44,16 @@ class FrameAnalyzer(
 
                 val results = detector.detect(resizedBitmap)
 
-                DepthAPI(results, arSession, screenWidth, screenHeight)
-
                 if (results.isNotEmpty()) {
-                    ttsHelper.speak("${results[0].name} detected, ${results[0].distance} meters away")
+                    val distance = results[0].distance.value ?: 0f
+                    val spokenDistance = if (distance > 0f) {
+                        "$distance meters away"
+                    } else {
+                        "Distance Unknown"
+                    }
+
+                    ttsHelper.speak("${results[0].name} detected, $spokenDistance")
+                    Log.d("TTSHelper", "TTS says: ${"%.1f".format(distance)}")
                 }
 
                 onResults(results)
