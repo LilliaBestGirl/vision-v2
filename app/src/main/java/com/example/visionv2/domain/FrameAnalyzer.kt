@@ -2,22 +2,12 @@ package com.example.visionv2.domain
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.ImageFormat
 import android.graphics.Matrix
-import android.graphics.Paint
-import android.graphics.Rect
-import android.graphics.YuvImage
 import android.util.Log
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import com.example.visionv2.data.ModelOutput
 import com.example.visionv2.model.ObjectDetectorModel
-import com.google.ar.core.Session
-import java.io.ByteArrayOutputStream
-import kotlin.math.min
 
 class FrameAnalyzer(
     private val context: Context,
