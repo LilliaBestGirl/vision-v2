@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Paint
 import android.opengl.GLSurfaceView
-import android.opengl.GLSurfaceView.Renderer
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -18,11 +17,11 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.visionv2.data.ModelOutput
 import com.example.visionv2.domain.ARRenderer
+import com.example.visionv2.presentation.camera.BackgroundRenderer
 import com.google.ar.core.ArCoreApk
 import com.google.ar.core.Config
 import com.google.ar.core.Session
@@ -34,6 +33,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var session: Session
     private lateinit var glSurfaceView: GLSurfaceView
     private lateinit var renderer: ARRenderer
+    private lateinit var backgroundRenderer: BackgroundRenderer
 
     override fun onResume() {
         super.onResume()
@@ -64,14 +64,20 @@ class MainActivity : ComponentActivity() {
                     config.depthMode = Config.DepthMode.AUTOMATIC
                     session.configure(config)
 
-                    // Initialize renderer *now that session exists*
-                    renderer = ARRenderer(session)
+                    if (!::backgroundRenderer.isInitialized) {
+                        backgroundRenderer = BackgroundRenderer()
+
+                        Log.d("bgRenderer", "Background Renderer created")
+                    }
+
+                    session.setCameraTextureName(renderer.getTextureId())
+                    renderer = ARRenderer(session, backgroundRenderer)
+
                     glSurfaceView.setRenderer(renderer)
                     glSurfaceView.renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY
 
-                    session.setCameraTextureName(renderer.getTextureId())
-                    glSurfaceView.onResume()
                     session.resume()
+                    glSurfaceView.onResume()
 
                     Log.d("ARCore", "Session resumed with renderer")
                 }
