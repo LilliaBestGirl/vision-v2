@@ -26,6 +26,9 @@ class ARRenderer(
         } else {
             Log.e("GLCheck", "GL_OES_EGL_image_external is NOT supported! Camera texture won't render.")
         }
+
+        backgroundRenderer.createOnGlThread()
+        session.setCameraTextureName(getTextureId())
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {

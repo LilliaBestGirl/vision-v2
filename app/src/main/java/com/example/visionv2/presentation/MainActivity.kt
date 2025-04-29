@@ -70,7 +70,6 @@ class MainActivity : ComponentActivity() {
                         Log.d("bgRenderer", "Background Renderer created")
                     }
 
-                    session.setCameraTextureName(renderer.getTextureId())
                     renderer = ARRenderer(session, backgroundRenderer)
 
                     glSurfaceView.setRenderer(renderer)
@@ -94,7 +93,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         glSurfaceView = GLSurfaceView(this)
-        glSurfaceView.setEGLContextClientVersion(2)
+        glSurfaceView.setEGLContextClientVersion(3)
 
         setContentView(glSurfaceView)
 
