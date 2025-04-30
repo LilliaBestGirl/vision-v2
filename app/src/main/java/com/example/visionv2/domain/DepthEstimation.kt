@@ -2,6 +2,7 @@ package com.example.visionv2.domain
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.util.Log
 import com.example.visionv2.data.ModelOutput
 import com.example.visionv2.data.PreprocessResult
 import com.example.visionv2.utils.preprocessBitmap
@@ -46,16 +47,21 @@ class DepthEstimation(
         scale: Float,
         targetSize: Int = 256
     ) {
-        for (output in outputs) {
+        for ((index, output) in outputs.withIndex()) {
             val scaledX = (output.centerX * scale + xOffset).toInt()
             val scaledY = (output.centerY * scale + yOffset).toInt()
             val scaledW = (output.width * scale).toInt()
             val scaledH = (output.height * scale).toInt()
 
+            Log.d("DepthAssign", "[$index] Screen center: (${output.centerX}, ${output.centerY})")
+            Log.d("DepthAssign", "[$index] Scaled center: ($scaledX, $scaledY), w: $scaledW, h: $scaledH")
+
             val left = (scaledX - scaledW / 2).coerceIn(0, targetSize - 1)
             val top = (scaledY - scaledH / 2).coerceIn(0, targetSize - 1)
             val right = (scaledX + scaledW / 2).coerceIn(0, targetSize - 1)
             val bottom = (scaledY + scaledH / 2).coerceIn(0, targetSize - 1)
+
+            Log.d("DepthAssign", "[$index] Cropping box: left=$left, top=$top, right=$right, bottom=$bottom")
 
             val depthRegion = mutableListOf<Float>()
             for (y in top until bottom) {
@@ -64,9 +70,16 @@ class DepthEstimation(
                 }
             }
 
+            Log.d("DepthAssign", "[$index] Region size: ${depthRegion.size}")
+
             if (depthRegion.isNotEmpty()) {
-                val medianDepth = depthRegion.sorted()[depthRegion.size / 2]
+                val sorted = depthRegion.sorted()
+                val medianDepth = sorted[sorted.size / 2]
                 output.distance.value = medianDepth
+
+                Log.d("DepthAssign", "[$index] Median depth: $medianDepth")
+            } else {
+                Log.d("DepthAssign", "[$index] No valid region found.")
             }
         }
     }
