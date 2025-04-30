@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.visionv2.data.ModelOutput
+import com.example.visionv2.domain.DepthEstimation
 import com.example.visionv2.domain.FrameAnalyzer
 import com.example.visionv2.model.ObjectDetectorModel
 import com.example.visionv2.presentation.camera.CameraController
@@ -117,6 +118,9 @@ class MainActivity : ComponentActivity() {
                 FrameAnalyzer(
                     context = applicationContext,
                     detector = ObjectDetectorModel(
+                        context = applicationContext
+                    ),
+                    depth = DepthEstimation(
                         context = applicationContext
                     ),
                     screenWidth = screenWidth,

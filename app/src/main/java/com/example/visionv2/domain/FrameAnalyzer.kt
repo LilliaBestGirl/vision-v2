@@ -7,14 +7,14 @@ import android.util.Log
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import com.example.visionv2.data.ModelOutput
-import com.example.visionv2.model.ObjectDetectorModel
 
 class FrameAnalyzer(
     private val context: Context,
-    private val onResults: (List<ModelOutput>) -> Unit,
+    private val detector: Detector,
+    private val depth: Depth,
     private val screenWidth: Float,
     private val screenHeight: Float,
-    private val detector: ObjectDetectorModel
+    private val onResults: (List<ModelOutput>) -> Unit,
 ) : ImageAnalysis.Analyzer {
 
     private val ttsHelper = TTSHelper(context)
@@ -33,6 +33,8 @@ class FrameAnalyzer(
                 val resizedBitmap = Bitmap.createScaledBitmap(rotatedBitmap, screenWidth.toInt(), screenHeight.toInt(), true)
 
                 val results = detector.detect(resizedBitmap)
+
+                depth.depth(resizedBitmap, results)
 
                 if (results.isNotEmpty()) {
                     val distance = results[0].distance.value ?: 0f
