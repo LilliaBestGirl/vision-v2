@@ -38,14 +38,13 @@ class FrameAnalyzer(
 
                 if (results.isNotEmpty()) {
                     val distance = results[0].distance.value ?: 0f
-                    val spokenDistance = if (distance > 0f) {
-                        "$distance meters away"
-                    } else {
-                        "Distance Unknown"
+                    val spokenDistance = when {
+                        distance < 300 -> "very close"
+                        distance < 600 -> "moderately close"
+                        else -> "far away"
                     }
 
                     ttsHelper.speak("${results[0].name} detected, $spokenDistance")
-                    Log.d("TTSHelper", "TTS says: ${"%.1f".format(distance)}")
                 }
 
                 onResults(results)
