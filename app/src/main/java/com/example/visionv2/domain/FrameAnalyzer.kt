@@ -12,15 +12,19 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.core.graphics.scale
+import com.example.visionv2.model.ObjectDetectorModel
 
 class FrameAnalyzer(
     private val context: Context,
-    private val detector: Detector,
+    private var detector: ObjectDetectorModel,
     private val depth: Depth,
     private val screenWidth: Float,
     private val screenHeight: Float,
     private val onResults: (List<ModelOutput>) -> Unit,
 ) : ImageAnalysis.Analyzer {
+
+    @Volatile
+    private var currentDetector: ObjectDetectorModel = detector
 
     private val ttsHelper = TTSHelper(context)
     private var frameSkipCount = 0
@@ -40,31 +44,29 @@ class FrameAnalyzer(
                 )
 
                 val bitmap = image.toBitmap()
-                if (bitmap != null) {
-                    val rotatedBitmap = rotateBitmap(bitmap)
-                    val resizedBitmap =
-                        rotatedBitmap.scale(screenWidth.toInt(), screenHeight.toInt())
+                val rotatedBitmap = rotateBitmap(bitmap)
+                val resizedBitmap =
+                    rotatedBitmap.scale(screenWidth.toInt(), screenHeight.toInt())
 
-                    val results = withContext(Dispatchers.Default) {
-                        val detections = detector.detect(resizedBitmap)
-                        depth.depth(resizedBitmap, detections)
-                        detections
-                    }
-
-                    if (results.isNotEmpty()) {
-                        val distance = results[0].distance.value ?: 0f
-                        val spokenDistance = when {
-                            distance < 300 -> "very close"
-                            distance < 600 -> "moderately close"
-                            else -> "far away"
-                        }
-
-                        ttsHelper.speak("${results[0].name} detected, $spokenDistance")
-                    }
-
-                    onResults(results)
+                val activeDetector = currentDetector
+                val results = withContext(Dispatchers.Default) {
+                    Log.d("withContext", "Detector instance hash: ${System.identityHashCode(activeDetector)}, isIndoor: ${detector.isIndoorMode}")
+                    val detections = activeDetector.detect(resizedBitmap)
+                    depth.depth(resizedBitmap, detections)
+                    detections
                 }
 
+                if (results.isNotEmpty()) {
+                    val distance = results[0].distance.value ?: 0f
+                    val spokenDistance = when {
+                        distance < 300 -> "very close"
+                        distance < 600 -> "moderately close"
+                        else -> "far away"
+                    }
+                    ttsHelper.speak("${results[0].name} detected, $spokenDistance")
+                }
+
+                onResults(results)
                 image.close()
             }
         } else {
@@ -80,4 +82,9 @@ class FrameAnalyzer(
         return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
     }
 
+    fun updateDetector(newDetector: ObjectDetectorModel) {
+        currentDetector.close()
+        Log.d("udpateDetector", "New detector is in Indoor Mode?: ${newDetector.isIndoorMode}")
+        currentDetector = newDetector
+    }
 }

@@ -10,9 +10,15 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -34,12 +40,6 @@ import com.example.visionv2.ui.theme.VISIONV2Theme
 
 class MainActivity : ComponentActivity() {
 
-//    var installRequested = false
-//    private lateinit var session: Session
-//    private lateinit var glSurfaceView: GLSurfaceView
-//    private lateinit var renderer: ARRenderer
-//    private lateinit var backgroundRenderer: BackgroundRenderer
-
     override fun onResume() {
         super.onResume()
 
@@ -49,56 +49,7 @@ class MainActivity : ComponentActivity() {
             )
             return
         }
-
-//        try {
-//            when (ArCoreApk.getInstance().requestInstall(this, !installRequested)) {
-//                ArCoreApk.InstallStatus.INSTALL_REQUESTED -> {
-//                    installRequested = true
-//                    return
-//                }
-//
-//                ArCoreApk.InstallStatus.INSTALLED -> {
-//                    installRequested = false
-//
-//                    if (!::session.isInitialized) {
-//                        session = Session(this)
-//                        Log.d("ARCore", "Session initialized")
-//                    }
-//
-//                    val config = Config(session)
-//                    config.depthMode = Config.DepthMode.AUTOMATIC
-//                    session.configure(config)
-//
-//                    if (!::backgroundRenderer.isInitialized) {
-//                        backgroundRenderer = BackgroundRenderer()
-//
-//                        Log.d("bgRenderer", "Background Renderer created")
-//                    }
-//
-//                    renderer = ARRenderer(session, backgroundRenderer)
-//
-//                    glSurfaceView.setRenderer(renderer)
-//                    glSurfaceView.renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY
-//
-//                    session.resume()
-//                    glSurfaceView.onResume()
-//
-//                    Log.d("ARCore", "Session resumed with renderer")
-//                }
-//            }
-//        } catch (e: UnavailableException) {
-//            Log.e("ARCore", "ARCore not available: ${e.message}")
-//            Toast.makeText(this, "ARCore is required", Toast.LENGTH_LONG).show()
-//            finish()
-//        }
     }
-
-//    override fun onPause() {
-//        super.onPause()
-//        glSurfaceView.onPause()
-//        session.pause()
-//    }
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -110,19 +61,20 @@ class MainActivity : ComponentActivity() {
             val screenWidth = with(density) { configuration.screenWidthDp.dp.toPx() }
             val screenHeight = with(density) { configuration.screenHeightDp.dp.toPx() }
 
-            var detections = remember {
-                mutableStateListOf<ModelOutput>()
+            var isIndoorMode by remember { mutableStateOf(false) }
+            var detections = remember { mutableStateListOf<ModelOutput>() }
+
+            val detectorState = remember(isIndoorMode) {
+                Log.d("detectorState", "Indoor Mode: $isIndoorMode")
+                ObjectDetectorModel(applicationContext, isIndoorMode)
             }
 
-            val analyzer = remember {
+            val analyzer = remember(detectorState) {
+                Log.d("analyzer", "${detectorState.isIndoorMode}")
                 FrameAnalyzer(
                     context = applicationContext,
-                    detector = ObjectDetectorModel(
-                        context = applicationContext
-                    ),
-                    depth = DepthEstimation(
-                        context = applicationContext
-                    ),
+                    detector = detectorState,
+                    depth = DepthEstimation(context = applicationContext),
                     screenWidth = screenWidth,
                     screenHeight = screenHeight,
                     onResults = {
@@ -134,12 +86,32 @@ class MainActivity : ComponentActivity() {
 
             val controller = CameraController(applicationContext, analyzer, screenWidth, screenHeight)
 
+            LaunchedEffect(isIndoorMode) {
+                val newDetector = ObjectDetectorModel(applicationContext, isIndoorMode)
+                Log.d("DetectorInit", "Created new detector: ${System.identityHashCode(newDetector)}, isIndoor: ${newDetector.isIndoorMode}")
+
+                analyzer.updateDetector(newDetector)
+
+                // Required to ensure CameraX continues to use updated analyzer instance
+                controller.updateAnalyzer(analyzer)
+            }
+
             VISIONV2Theme {
                 Box(Modifier.fillMaxSize()) {
-
                     CameraPreview(controller, modifier = Modifier.fillMaxSize())
 
                     BoundingBoxCanvas(detections)
+
+                    Switch(
+                        checked = isIndoorMode,
+                        onCheckedChange = {
+                            isIndoorMode = it
+                            Log.d("Switch", "Switch clicked, indoor mode is now: $isIndoorMode")
+
+
+                        },
+                        modifier = Modifier.align(Alignment.BottomCenter)
+                    )
                 }
             }
         }

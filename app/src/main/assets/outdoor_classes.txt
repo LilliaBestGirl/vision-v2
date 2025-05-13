@@ -1,0 +1,7 @@
+/m/0cvnqh bench
+/m/0199g bicycle
+/m/01bjv bus
+/m/04_sv motorcycle
+/m/01g317 person
+/m/07r04 truck
+/m/0k4j car

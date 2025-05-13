@@ -2,10 +2,10 @@ package com.example.visionv2.presentation.camera
 
 import android.content.Context
 import android.util.Size
+import android.util.Log
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
-import androidx.camera.core.resolutionselector.ResolutionSelector
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
@@ -53,5 +53,10 @@ class CameraController(
     fun stopCamera() {
         cameraProviderFuture.get().unbindAll()
         cameraExecutor.shutdown()
+    }
+
+    fun updateAnalyzer(analyzer: ImageAnalysis.Analyzer) {
+        imageAnalysis.clearAnalyzer()
+        imageAnalysis.setAnalyzer(cameraExecutor, analyzer)
     }
 }
