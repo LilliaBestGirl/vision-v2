@@ -61,19 +61,14 @@ class MainActivity : ComponentActivity() {
             val screenWidth = with(density) { configuration.screenWidthDp.dp.toPx() }
             val screenHeight = with(density) { configuration.screenHeightDp.dp.toPx() }
 
-            var isIndoorMode by remember { mutableStateOf(false) }
             var detections = remember { mutableStateListOf<ModelOutput>() }
 
-            val detectorState = remember(isIndoorMode) {
-                Log.d("detectorState", "Indoor Mode: $isIndoorMode")
-                ObjectDetectorModel(applicationContext, isIndoorMode)
-            }
+            val detector = ObjectDetectorModel(applicationContext)
 
-            val analyzer = remember(detectorState) {
-                Log.d("analyzer", "${detectorState.isIndoorMode}")
+            val analyzer =
                 FrameAnalyzer(
                     context = applicationContext,
-                    detector = detectorState,
+                    detector = detector,
                     depth = DepthEstimation(context = applicationContext),
                     screenWidth = screenWidth,
                     screenHeight = screenHeight,
@@ -82,36 +77,14 @@ class MainActivity : ComponentActivity() {
                         detections.addAll(it)
                     }
                 )
-            }
 
             val controller = CameraController(applicationContext, analyzer, screenWidth, screenHeight)
-
-            LaunchedEffect(isIndoorMode) {
-                val newDetector = ObjectDetectorModel(applicationContext, isIndoorMode)
-                Log.d("DetectorInit", "Created new detector: ${System.identityHashCode(newDetector)}, isIndoor: ${newDetector.isIndoorMode}")
-
-                analyzer.updateDetector(newDetector)
-
-                // Required to ensure CameraX continues to use updated analyzer instance
-                controller.updateAnalyzer(analyzer)
-            }
 
             VISIONV2Theme {
                 Box(Modifier.fillMaxSize()) {
                     CameraPreview(controller, modifier = Modifier.fillMaxSize())
 
                     BoundingBoxCanvas(detections)
-
-                    Switch(
-                        checked = isIndoorMode,
-                        onCheckedChange = {
-                            isIndoorMode = it
-                            Log.d("Switch", "Switch clicked, indoor mode is now: $isIndoorMode")
-
-
-                        },
-                        modifier = Modifier.align(Alignment.BottomCenter)
-                    )
                 }
             }
         }

@@ -12,45 +12,28 @@ import org.tensorflow.lite.support.common.FileUtil
 import java.nio.MappedByteBuffer
 
 class ObjectDetectorModel(
-    private val context: Context,
-    val isIndoorMode: Boolean
+    private val context: Context
 ) : Detector {
 
     private var interpreter: Interpreter
     private val inputShape: IntArray
     private lateinit var preprocessResult: PreprocessResult
 
-    // will be used once indoor model has been received
-    private var modelName = if (isIndoorMode) "yolov5_indoor_model.tflite" else "yolov5_outdoor_model.tflite"
+    private var modelName = "best-fp16.tflite"
 
-    private var labelsFile = if (isIndoorMode) "indoor_classes.txt" else "outdoor_classes.txt"
+    private var labelsFile = "outdoor_classes.txt"
 
     init {
-        // Load TFLite model
         val modelFile: MappedByteBuffer = FileUtil.loadMappedFile(context, modelName)
         interpreter = Interpreter(modelFile)
         inputShape = interpreter.getInputTensor(0).shape()
     }
 
     override fun detect(bitmap: Bitmap): List<ModelOutput> {
-        if (isIndoorMode) {
-            Log.d("Indoor", "Is Indoor Mode: $isIndoorMode")
-        } else {
-            Log.d("Outdoor", "Is Indoor Mode: $isIndoorMode")
-        }
 
-        // Resize and normalize the input
         preprocessResult = preprocessBitmap(bitmap, 640)
+        val outputBuffer = Array(1) { Array(25200) { FloatArray(21) } }
 
-        // Output array
-        val outputBuffer = if (isIndoorMode) {
-            Array(1) { Array(25200) { FloatArray(14) } }
-        } else {
-            Array(1) { Array(25200) { FloatArray(12) } }
-        }
-
-
-        // Run inference
         try {
             interpreter.runForMultipleInputsOutputs(
                 arrayOf(preprocessResult.inputBuffer),
@@ -82,29 +65,25 @@ class ObjectDetectorModel(
         return labelMap
     }
 
-    private val idMap = if (!isIndoorMode) {
-        listOf(
-            "/m/0199g",  // bicycle
-            "/m/01bjv",  // bus
-            "/m/01g317", // person
-            "/m/04_sv",  // motorcycle
-            "/m/07r04",   // truck
-            "/m/0cvnqh", // bench
-            "/m/0k4j",   // car
-        )
-    } else {
+    private val idMap =
         listOf(
             "/m/0130jx", // Sink
+            "/m/0199g", // Bicycle
+            "/m/01bjv", // Bus
+            "/m/01g317", // Person
             "/m/01mzpv", // Chair
             "/m/02crq1", // Couch
             "/m/02dgv", // Door
             "/m/03ssj5", // Bed
             "/m/040b_t", // Refrigerator
+            "/m/04_sv", // Motorcycle
             "/m/04bcr3", // Table
             "/m/07c52", // Television
+            "/m/07r04", // Truck
             "/m/09g1w", // Toilet
+            "/m/0cvnqh", // Bench
+            "/m/0k4j", // Car
         )
-    }
 
     private fun parseResults(
         outputBuffer: Array<Array<FloatArray>>
@@ -122,8 +101,9 @@ class ObjectDetectorModel(
             val width = (box[2] * 640) / preprocessResult.scale
             val height = (box[3] * 640) / preprocessResult.scale
 
-            val classScores = box.sliceArray(5 until 12)
+            val classScores = box.sliceArray(5 until 21)
             val maxClassIndex = classScores.indices.maxByOrNull { classScores[it] } ?: -1
+            Log.d("ClassIndex", "Class Index: $maxClassIndex")
 
             val classId = idMap.getOrNull(maxClassIndex) ?: "Unknown"
             val label = labelMap[classId] ?: "Unknown"
@@ -141,7 +121,6 @@ class ObjectDetectorModel(
             )
         }
 
-        // Sort by confidence and take top 5 predictions
         return results.sortedByDescending { it.score }.take(5)
     }
 

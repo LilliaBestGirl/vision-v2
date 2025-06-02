@@ -50,7 +50,6 @@ class FrameAnalyzer(
 
                 val activeDetector = currentDetector
                 val results = withContext(Dispatchers.Default) {
-                    Log.d("withContext", "Detector instance hash: ${System.identityHashCode(activeDetector)}, isIndoor: ${detector.isIndoorMode}")
                     val detections = activeDetector.detect(resizedBitmap)
                     depth.depth(resizedBitmap, detections)
                     detections
@@ -59,9 +58,9 @@ class FrameAnalyzer(
                 if (results.isNotEmpty()) {
                     val distance = results[0].distance.value ?: 0f
                     val spokenDistance = when {
-                        distance < 300 -> "very close"
+                        distance < 300 -> "far away"
                         distance < 600 -> "moderately close"
-                        else -> "far away"
+                        else -> "very close"
                     }
                     ttsHelper.speak("${results[0].name} detected, $spokenDistance")
                 }
@@ -80,11 +79,5 @@ class FrameAnalyzer(
         val matrix = Matrix()
         matrix.postRotate(degrees)
         return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
-    }
-
-    fun updateDetector(newDetector: ObjectDetectorModel) {
-        currentDetector.close()
-        Log.d("udpateDetector", "New detector is in Indoor Mode?: ${newDetector.isIndoorMode}")
-        currentDetector = newDetector
     }
 }
