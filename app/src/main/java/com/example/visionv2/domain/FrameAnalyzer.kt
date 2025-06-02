@@ -16,7 +16,7 @@ import com.example.visionv2.model.ObjectDetectorModel
 
 class FrameAnalyzer(
     private val context: Context,
-    private var detector: ObjectDetectorModel,
+    private val detector: ObjectDetectorModel,
     private val depth: Depth,
     private val screenWidth: Float,
     private val screenHeight: Float,
