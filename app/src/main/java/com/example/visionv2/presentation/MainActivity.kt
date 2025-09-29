@@ -8,11 +8,25 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -21,6 +35,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -77,8 +92,10 @@ class MainActivity : ComponentActivity() {
             VISIONV2Theme {
                 Box(Modifier.fillMaxSize()) {
                     CameraPreview(controller, modifier = Modifier.fillMaxSize())
-
+                    
                     BoundingBoxCanvas(detections)
+
+                    LanguageButton()
                 }
             }
         }
@@ -87,6 +104,43 @@ class MainActivity : ComponentActivity() {
     private fun hasCameraPermission() = ContextCompat.checkSelfPermission(
         this, Manifest.permission.CAMERA
     ) == PackageManager.PERMISSION_GRANTED
+}
+
+@Composable
+fun LanguageButton() {
+    var expanded = remember { mutableStateOf(false) }
+    Box(
+        modifier = Modifier.padding(16.dp).fillMaxWidth(),
+        contentAlignment = Alignment.TopEnd
+    ) {
+        IconButton(onClick = { expanded.value = !expanded.value }) {
+            Icon(
+                Icons.Default.Settings,
+                contentDescription = "Language Options",
+                modifier = Modifier.size(32.dp)
+            )
+        }
+        DropdownMenu(
+            expanded = expanded.value,
+            onDismissRequest = { expanded.value = false },
+            offset = DpOffset(x = (210).dp, y = 0.dp)
+        ) {
+            DropdownMenuItem(
+                text = { Text("English") },
+                onClick = {
+                    // TODO: Add function to change language
+                    expanded.value = !expanded.value
+                }
+            )
+            DropdownMenuItem(
+                text = { Text("Filipino") },
+                onClick = {
+                    // TODO: Add function to change language
+                    expanded.value = !expanded.value
+                }
+            )
+        }
+    }
 }
 
 @Composable
@@ -100,6 +154,7 @@ fun BoundingBoxCanvas(detections: List<ModelOutput>) {
             val bottom = detection.centerY + detection.height / 2
 
             val score = String.format("%.2f", detection.score)
+            val depthValue = detection.distance.value
 
             Log.d(
                 "BoundingBoxCanvas",
@@ -115,7 +170,7 @@ fun BoundingBoxCanvas(detections: List<ModelOutput>) {
 
             drawContext.canvas.nativeCanvas.apply {
                 drawText(
-                    "${detection.name} - $score",
+                    "${detection.name} - $score - $depthValue",
                     left,
                     top - 10f,
                     Paint().apply {

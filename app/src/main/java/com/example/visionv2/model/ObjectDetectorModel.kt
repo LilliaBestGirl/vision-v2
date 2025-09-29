@@ -19,9 +19,9 @@ class ObjectDetectorModel(
     private val inputShape: IntArray
     private lateinit var preprocessResult: PreprocessResult
 
-    private var modelName = "best-fp16.tflite"
+    private var modelName = "original_yolo.tflite" // Change to best-fp16.tflite for new model
 
-    private var labelsFile = "outdoor_classes.txt"
+    private var labelsFile = "old_classes.txt" // Change to new_classes.txt for new model's classes and labels
 
     init {
         val modelFile: MappedByteBuffer = FileUtil.loadMappedFile(context, modelName)
@@ -67,13 +67,36 @@ class ObjectDetectorModel(
 
     private val idMap =
         listOf(
+              // original_yolo.tflite ID Map
+//            "/m/0130jx", // Sink
+//            "/m/0199g", // Bicycle
+//            "/m/01bjv", // Bus
+//            "/m/01g317", // Person
+//            "/m/01mzpv", // Chair
+//            "/m/02crq1", // Couch
+//            "/m/02dgv", // Door
+//            "/m/03ssj5", // Bed
+//            "/m/040b_t", // Refrigerator
+//            "/m/04_sv", // Motorcycle
+//            "/m/04bcr3", // Table
+//            "/m/07c52", // Television
+//            "/m/07r04", // Truck
+//            "/m/09g1w", // Toilet
+//            "/m/0cvnqh", // Bench
+//            "/m/0k4j", // Car
+
+            // best-fp16.tflite ID map
             "/m/0130jx", // Sink
+            "/m/015qff", // Traffic light
             "/m/0199g", // Bicycle
             "/m/01bjv", // Bus
             "/m/01g317", // Person
+            "/m/01lynh", // Stairs
             "/m/01mzpv", // Chair
+            "/m/02522", // Computer monitor
             "/m/02crq1", // Couch
             "/m/02dgv", // Door
+            "/m/033rq4", // Street light
             "/m/03ssj5", // Bed
             "/m/040b_t", // Refrigerator
             "/m/04_sv", // Motorcycle
@@ -83,6 +106,8 @@ class ObjectDetectorModel(
             "/m/09g1w", // Toilet
             "/m/0cvnqh", // Bench
             "/m/0k4j", // Car
+            "Jeep", // Jeep
+            "Tricycle" // Tricycle
         )
 
     private fun parseResults(
@@ -106,6 +131,7 @@ class ObjectDetectorModel(
             Log.d("ClassIndex", "Class Index: $maxClassIndex")
 
             val classId = idMap.getOrNull(maxClassIndex) ?: "Unknown"
+            Log.d("ClassID", "$classId")
             val label = labelMap[classId] ?: "Unknown"
 
             results.add(

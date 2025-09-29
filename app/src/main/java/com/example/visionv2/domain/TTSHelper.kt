@@ -3,6 +3,7 @@ package com.example.visionv2.domain
 import android.content.Context
 import android.speech.tts.TextToSpeech
 import android.util.Log
+import java.util.Locale
 
 class TTSHelper(context: Context) {
     private var tts: TextToSpeech? = null
@@ -15,6 +16,10 @@ class TTSHelper(context: Context) {
                 Log.e("TTSHelper", "TTS Initialization Error")
             }
         }
+    }
+
+    fun changeLanguage() {
+        tts?.language = Locale("fil", "PH")
     }
 
     fun speak(text: String) {

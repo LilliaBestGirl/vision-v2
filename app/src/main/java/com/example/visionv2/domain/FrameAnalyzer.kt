@@ -57,12 +57,8 @@ class FrameAnalyzer(
 
                 if (results.isNotEmpty()) {
                     val distance = results[0].distance.value ?: 0f
-                    val spokenDistance = when {
-                        distance < 300 -> "far away"
-                        distance < 600 -> "moderately close"
-                        else -> "very close"
-                    }
-                    ttsHelper.speak("${results[0].name} detected, $spokenDistance")
+
+                    ttsHelper.speak("${results[0].name} detected, ${results[0].distanceLabel.value}")
                 }
 
                 onResults(results)
