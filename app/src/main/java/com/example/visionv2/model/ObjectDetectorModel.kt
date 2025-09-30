@@ -88,7 +88,7 @@ class ObjectDetectorModel(
             val width = (box[2] * 640) / preprocessResult.scale
             val height = (box[3] * 640) / preprocessResult.scale
 
-            val classScores = box.sliceArray(5 until 21)
+            val classScores = box.sliceArray(5 until box.size)
             val maxClassIndex = classScores.indices.maxByOrNull { classScores[it] } ?: -1
             Log.d("ClassIndex", "Class Index: $maxClassIndex")
 
