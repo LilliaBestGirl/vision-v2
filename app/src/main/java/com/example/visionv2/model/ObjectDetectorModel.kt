@@ -21,8 +21,6 @@ class ObjectDetectorModel(
 
     private var modelName = "original_yolo.tflite" // Change to best-fp16.tflite for new model
 
-    private var labelsFile = "old_classes.txt" // Change to new_classes.txt for new model's classes and labels
-
     init {
         val modelFile: MappedByteBuffer = FileUtil.loadMappedFile(context, modelName)
         interpreter = Interpreter(modelFile)
@@ -39,7 +37,7 @@ class ObjectDetectorModel(
                 arrayOf(preprocessResult.inputBuffer),
                 mapOf(0 to outputBuffer)
             )
-        } catch(e: Exception) {
+        } catch (e: Exception) {
             Log.e("Interpreter", "Interpreter Error: ${e.message}")
         }
 
@@ -48,66 +46,30 @@ class ObjectDetectorModel(
         return nonMaxSuppression(rawResults)
     }
 
-    private val labelMap: Map<String, String> = loadLabels(context, labelsFile)
-
-    private fun loadLabels(context: Context, fileName: String): Map<String, String> {
-        val labelMap = mutableMapOf<String, String>()
-        context.assets.open(fileName).bufferedReader().useLines { lines ->
-            lines.forEach { line ->
-                val parts = line.split(" ")
-                if (parts.size == 2) {
-                    val id = parts[0]
-                    val label = parts[1]
-                    labelMap[id] = label
-                }
-            }
-        }
-        return labelMap
-    }
-
-    private val idMap =
+    private val labelMap: List<String> =
         listOf(
-              // original_yolo.tflite ID Map
-//            "/m/0130jx", // Sink
-//            "/m/0199g", // Bicycle
-//            "/m/01bjv", // Bus
-//            "/m/01g317", // Person
-//            "/m/01mzpv", // Chair
-//            "/m/02crq1", // Couch
-//            "/m/02dgv", // Door
-//            "/m/03ssj5", // Bed
-//            "/m/040b_t", // Refrigerator
-//            "/m/04_sv", // Motorcycle
-//            "/m/04bcr3", // Table
-//            "/m/07c52", // Television
-//            "/m/07r04", // Truck
-//            "/m/09g1w", // Toilet
-//            "/m/0cvnqh", // Bench
-//            "/m/0k4j", // Car
-
-            // best-fp16.tflite ID map
-            "/m/0130jx", // Sink
-            "/m/015qff", // Traffic light
-            "/m/0199g", // Bicycle
-            "/m/01bjv", // Bus
-            "/m/01g317", // Person
-            "/m/01lynh", // Stairs
-            "/m/01mzpv", // Chair
-            "/m/02522", // Computer monitor
-            "/m/02crq1", // Couch
-            "/m/02dgv", // Door
-            "/m/033rq4", // Street light
-            "/m/03ssj5", // Bed
-            "/m/040b_t", // Refrigerator
-            "/m/04_sv", // Motorcycle
-            "/m/04bcr3", // Table
-            "/m/07c52", // Television
-            "/m/07r04", // Truck
-            "/m/09g1w", // Toilet
-            "/m/0cvnqh", // Bench
-            "/m/0k4j", // Car
-            "Jeep", // Jeep
-            "Tricycle" // Tricycle
+            "Sink",
+            "Traffic light",
+            "Bicycle",
+            "Bus",
+            "Person",
+            "Stairs",
+            "Chair",
+            "Computer monitor",
+            "Couch",
+            "Door",
+            "Street light",
+            "Bed",
+            "Refrigerator",
+            "Motorcycle",
+            "Table",
+            "Television",
+            "Truck",
+            "Toilet",
+            "Bench",
+            "Car",
+            "Jeep",
+            "Tricycle",
         )
 
     private fun parseResults(
@@ -130,9 +92,7 @@ class ObjectDetectorModel(
             val maxClassIndex = classScores.indices.maxByOrNull { classScores[it] } ?: -1
             Log.d("ClassIndex", "Class Index: $maxClassIndex")
 
-            val classId = idMap.getOrNull(maxClassIndex) ?: "Unknown"
-            Log.d("ClassID", "$classId")
-            val label = labelMap[classId] ?: "Unknown"
+            val label = labelMap[maxClassIndex]
 
             results.add(
                 ModelOutput(
