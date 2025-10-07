@@ -19,7 +19,7 @@ class ObjectDetectorModel(
     private val inputShape: IntArray
     private lateinit var preprocessResult: PreprocessResult
 
-    private var modelName = "original_yolo.tflite" // Change to best-fp16.tflite for new model
+    private var modelName = "best-fp16.tflite"
 
     init {
         val modelFile: MappedByteBuffer = FileUtil.loadMappedFile(context, modelName)
@@ -30,7 +30,7 @@ class ObjectDetectorModel(
     override fun detect(bitmap: Bitmap): List<ModelOutput> {
 
         preprocessResult = preprocessBitmap(bitmap, 640)
-        val outputBuffer = Array(1) { Array(25200) { FloatArray(21) } }
+        val outputBuffer = Array(1) { Array(25200) { FloatArray(25) } }
 
         try {
             interpreter.runForMultipleInputsOutputs(
@@ -48,28 +48,26 @@ class ObjectDetectorModel(
 
     private val labelMap: List<String> =
         listOf(
-            "Sink",
-            "Traffic light",
+            "Bed",
+            "Bench",
             "Bicycle",
             "Bus",
-            "Person",
-            "Stairs",
+            "Car",
             "Chair",
             "Computer monitor",
             "Couch",
             "Door",
-            "Street light",
-            "Bed",
-            "Refrigerator",
             "Motorcycle",
+            "Person",
+            "Refrigerator",
+            "Sink",
+            "Stairs",
+            "Street light",
             "Table",
             "Television",
-            "Truck",
             "Toilet",
-            "Bench",
-            "Car",
-            "Jeep",
-            "Tricycle",
+            "Traffic light",
+            "Truck"
         )
 
     private fun parseResults(
