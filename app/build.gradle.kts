@@ -59,6 +59,9 @@ dependencies {
 
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
 
+    // DataStore
+    implementation("androidx.datastore:datastore-preferences:1.1.7")
+
     // Camerax implementation
     val cameraxVersion = "1.3.0-rc01"
 

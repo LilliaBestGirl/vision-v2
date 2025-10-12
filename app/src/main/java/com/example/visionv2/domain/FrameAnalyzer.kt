@@ -13,11 +13,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.core.graphics.scale
 import com.example.visionv2.model.ObjectDetectorModel
+import com.example.visionv2.tts.TTSHelper
 
 class FrameAnalyzer(
     private val context: Context,
     private val detector: ObjectDetectorModel,
     private val depth: Depth,
+    private val tts: TTSHelper,
     private val screenWidth: Float,
     private val screenHeight: Float,
     private val onResults: (List<ModelOutput>) -> Unit,
@@ -25,8 +27,6 @@ class FrameAnalyzer(
 
     @Volatile
     private var currentDetector: ObjectDetectorModel = detector
-
-    private val ttsHelper = TTSHelper(context)
     private var frameSkipCount = 0
     private val frameSkipInterval = 3
 
@@ -58,7 +58,7 @@ class FrameAnalyzer(
                 if (results.isNotEmpty()) {
                     val distance = results[0].distance.value ?: 0f
 
-                    ttsHelper.speak("${results[0].name} detected, ${results[0].distanceLabel.value}")
+                    tts.speakDetection(results[0].classId, distance)
                 }
 
                 onResults(results)

@@ -1,20 +1,22 @@
 package com.example.visionv2.presentation
 
 import android.Manifest
+import android.annotation.SuppressLint
+import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Paint
 import android.os.Bundle
 import android.util.Log
+import android.speech.tts.TextToSpeech.OnInitListener
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.DropdownMenu
@@ -42,12 +44,15 @@ import androidx.core.content.ContextCompat
 import com.example.visionv2.data.ModelOutput
 import com.example.visionv2.domain.DepthEstimation
 import com.example.visionv2.domain.FrameAnalyzer
+import com.example.visionv2.tts.TTSHelper
 import com.example.visionv2.model.ObjectDetectorModel
 import com.example.visionv2.presentation.camera.CameraController
 import com.example.visionv2.presentation.camera.CameraPreview
 import com.example.visionv2.ui.theme.VISIONV2Theme
 
 class MainActivity : ComponentActivity() {
+
+    private lateinit var tts: TTSHelper
 
     override fun onResume() {
         super.onResume()
@@ -63,6 +68,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        tts = TTSHelper(this)
+        Toast.makeText(this, "TTS Initialized", Toast.LENGTH_SHORT).show()
+
         setContent {
             val configuration = LocalConfiguration.current
             val density = LocalDensity.current
@@ -70,7 +78,7 @@ class MainActivity : ComponentActivity() {
             val screenWidth = with(density) { configuration.screenWidthDp.dp.toPx() }
             val screenHeight = with(density) { configuration.screenHeightDp.dp.toPx() }
 
-            var detections = remember { mutableStateListOf<ModelOutput>() }
+            val detections = remember { mutableStateListOf<ModelOutput>() }
 
             val detector = ObjectDetectorModel(applicationContext)
 
@@ -79,6 +87,7 @@ class MainActivity : ComponentActivity() {
                     context = applicationContext,
                     detector = detector,
                     depth = DepthEstimation(context = applicationContext),
+                    tts = tts,
                     screenWidth = screenWidth,
                     screenHeight = screenHeight,
                     onResults = {
@@ -95,7 +104,7 @@ class MainActivity : ComponentActivity() {
                     
                     BoundingBoxCanvas(detections)
 
-                    LanguageButton()
+                    LanguageButton(tts, applicationContext)
                 }
             }
         }
@@ -107,8 +116,9 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun LanguageButton() {
-    var expanded = remember { mutableStateOf(false) }
+fun LanguageButton(tts: TTSHelper, context: Context) {
+    val expanded = remember { mutableStateOf(false) }
+
     Box(
         modifier = Modifier.padding(16.dp).fillMaxWidth(),
         contentAlignment = Alignment.TopEnd
@@ -128,14 +138,16 @@ fun LanguageButton() {
             DropdownMenuItem(
                 text = { Text("English") },
                 onClick = {
-                    // TODO: Add function to change language
+                    tts.changeLanguage("en", "US")
+                    Toast.makeText(context, "Changed to EN", Toast.LENGTH_SHORT).show()
                     expanded.value = !expanded.value
                 }
             )
             DropdownMenuItem(
                 text = { Text("Filipino") },
                 onClick = {
-                    // TODO: Add function to change language
+                    tts.changeLanguage("fil", "PH")
+                    Toast.makeText(context, "Changed to PH", Toast.LENGTH_SHORT).show()
                     expanded.value = !expanded.value
                 }
             )
@@ -143,6 +155,7 @@ fun LanguageButton() {
     }
 }
 
+@SuppressLint("DefaultLocale")
 @Composable
 fun BoundingBoxCanvas(detections: List<ModelOutput>) {
     Canvas(modifier = Modifier.fillMaxSize()) {

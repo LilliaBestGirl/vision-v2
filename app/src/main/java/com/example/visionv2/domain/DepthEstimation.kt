@@ -59,17 +59,10 @@ class DepthEstimation(
             val centerY = (scaledY * targetSize / 256).coerceIn(0, targetSize - 1)
 
             val depthValue = depthMap[0][centerY][centerX][0]
-            val label = when {
-                depthValue >= 800 -> "less than 1 meter away"
-                depthValue >= 500 -> "1.5 to 3 meters away"
-                depthValue >= 300 -> "3.5 to 4 meters away"
-                else -> "5m away"
-            }
 
             output.distance.value = depthValue
-            output.distanceLabel.value = label
 
-            Log.d("DepthAssign", "[$index] Depth at center: $depthValue | Label: $label")
+            Log.d("DepthAssign", "[$index] Depth at center: $depthValue")
         }
     }
 }
