@@ -19,7 +19,7 @@ class ObjectDetectorModel(
     private val inputShape: IntArray
     private lateinit var preprocessResult: PreprocessResult
 
-    private var modelName = "best-fp16.tflite"
+    private var modelName = "best-fp16-new.tflite"
 
     init {
         val modelFile: MappedByteBuffer = FileUtil.loadMappedFile(context, modelName)
@@ -30,7 +30,7 @@ class ObjectDetectorModel(
     override fun detect(bitmap: Bitmap): List<ModelOutput> {
 
         preprocessResult = preprocessBitmap(bitmap, 640)
-        val outputBuffer = Array(1) { Array(25200) { FloatArray(25) } }
+        val outputBuffer = Array(1) { Array(25200) { FloatArray(24) } }
 
         try {
             interpreter.runForMultipleInputsOutputs(
@@ -48,38 +48,38 @@ class ObjectDetectorModel(
 
     private val labelMap: List<String> =
         listOf(
-            "Bed",
-            "Bench",
+            "Sink",
+            "Traffic light",
             "Bicycle",
             "Bus",
-            "Car",
+            "Person",
             "Chair",
-            "Computer monitor",
             "Couch",
             "Door",
-            "Motorcycle",
-            "Person",
-            "Refrigerator",
-            "Sink",
-            "Stairs",
             "Street light",
+            "Bed",
+            "Refrigerator",
+            "Motorcycle",
             "Table",
             "Television",
+            "Truck",
             "Toilet",
-            "Traffic light",
-            "Truck"
+            "Bench",
+            "Car",
+            "Stairs"
         )
 
     private fun parseResults(
         outputBuffer: Array<Array<FloatArray>>
     ): List<ModelOutput> {
         val results = mutableListOf<ModelOutput>()
+        val confidenceThreshold = 0.5
 
         for (i in 0 until 25200) {
             val box = outputBuffer[0][i]
 
             val objectness = box[4]
-            if (objectness < 0.3) continue
+            if (objectness < confidenceThreshold) continue
 
             val centerX = (box[0] * 640 - preprocessResult.xOffset) / preprocessResult.scale
             val centerY = (box[1] * 640 - preprocessResult.yOffset) / preprocessResult.scale
@@ -88,7 +88,6 @@ class ObjectDetectorModel(
 
             val classScores = box.sliceArray(5 until box.size)
             val maxClassIndex = classScores.indices.maxByOrNull { classScores[it] } ?: -1
-            Log.d("ClassIndex", "Class Index: $maxClassIndex")
 
             val label = labelMap[maxClassIndex]
 

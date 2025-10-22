@@ -18,15 +18,47 @@ object Translations {
 
     // Label Maps
     private val englishLabelMap = listOf(
-        "Bed", "Bench", "Bicycle", "Bus", "Car", "Chair", "Computer monitor", "Couch",
-        "Door", "Motorcycle", "Person", "Refrigerator", "Sink", "Stairs", "Street light",
-        "Table", "Television", "Toilet", "Traffic light", "Truck"
+        "Sink",
+        "Traffic light",
+        "Bicycle",
+        "Bus",
+        "Person",
+        "Chair",
+        "Couch",
+        "Door",
+        "Street light",
+        "Bed",
+        "Refrigerator",
+        "Motorcycle",
+        "Table",
+        "Television",
+        "Truck",
+        "Toilet",
+        "Bench",
+        "Car",
+        "Stairs"
     )
 
     private val filipinoLabelMap = listOf(
-        "Kama", "Bangko", "Bisikleta", "Bus", "Kotse", "Silya", "Monitor ng kompyuter", "Sopa",
-        "Pinto", "Motorsiklo", "Tao", "Repridyeretor", "Lababo", "Hagdan", "Ilaw ng kalye",
-        "Mesa", "Telebisyon", "Palikuran", "Ilaw trapiko", "Trak"
+        "Lababo",
+        "Ilaw trapiko",
+        "Bisikleta",
+        "Bus",
+        "Tao",
+        "Silya",
+        "Sala",
+        "Pinto",
+        "Ilaw sa kalye",
+        "Kama",
+        "Refrigerator",
+        "Motorsiklo",
+        "Mesa",
+        "Telebisyon",
+        "Trak",
+        "Kubeta",
+        "Bangko",
+        "Kotse",
+        "Hagdan"
     )
 
     // Distance descriptions

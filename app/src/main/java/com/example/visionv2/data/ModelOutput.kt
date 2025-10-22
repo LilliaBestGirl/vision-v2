@@ -11,6 +11,5 @@ data class ModelOutput(
     val score: Float,
     val classId: Int,
     val name: String,
-    var distance: MutableState<Float?> = mutableStateOf(null),
-    var distanceLabel: MutableState<String?> = mutableStateOf(null)
+    var distance: MutableState<Float?> = mutableStateOf(null)
 )
