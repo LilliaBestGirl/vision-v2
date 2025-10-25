@@ -34,35 +34,44 @@ class DepthEstimation(
 
         assignDepthToObjects(
             modelOutput,
-            outputBuffer,
-            preprocessResult.xOffset,
-            preprocessResult.yOffset,
-            preprocessResult.scale,
+            outputBuffer
         )
     }
 
     private fun assignDepthToObjects(
         outputs: List<ModelOutput>,
         depthMap: Array<Array<Array<FloatArray>>>, // [1][256][256]
-        xOffset: Int,
-        yOffset: Int,
-        scale: Float,
-        targetSize: Int = 256
     ) {
+        val yoloFrameSize = 640f
+        val midasFrameSize = 256f
+        val scale = midasFrameSize / yoloFrameSize
+
+        val regionSize = 5
+        val half = regionSize / 2
+
         for ((index, output) in outputs.withIndex()) {
-            val scaledX = (output.centerX * scale + xOffset).toInt()
-            val scaledY = (output.centerY * scale + yOffset).toInt()
+            val depthX = (output.centerX * scale).toInt().coerceIn(0, midasFrameSize.toInt() - 1)
+            val depthY = (output.centerY * scale).toInt().coerceIn(0, midasFrameSize.toInt() - 1)
 
-            Log.d("DepthAssign", "[$index] Scaled center: ($scaledX, $scaledY)")
+            Log.d("DepthAssign", "[$index] Original center: (${output.centerX}, ${output.centerY})")
+            Log.d("DepthAssign", "[$index] Scaled center: ($depthX, $depthY)")
 
-            val centerX = (scaledX * targetSize / 256).coerceIn(0, targetSize - 1)
-            val centerY = (scaledY * targetSize / 256).coerceIn(0, targetSize - 1)
+            val depthValues = mutableListOf<Float>()
 
-            val depthValue = depthMap[0][centerY][centerX][0]
+            for (dy in -half..half) {
+                for (dx in -half..half) {
+                    val x = (depthX + dx).coerceIn(0, 255)
+                    val y = (depthY + dy).coerceIn(0, 255)
+                    val depth = depthMap[0][y][x][0]
+                    depthValues.add(depth)
+                }
+            }
 
-            output.distance.value = depthValue
+            val median = depthValues.sorted()[depthValues.size / 2]
 
-            Log.d("DepthAssign", "[$index] Depth at center: $depthValue")
+            Log.d("DepthAssign", "[$index] median depth: $median")
+
+            output.distance.value = median
         }
     }
 }
