@@ -119,12 +119,4 @@ object Translations {
     fun getSentence(label: String, distance: String, language: Language): String {
         return String.format(templates[language] ?: "%s detected, %s", label, distance)
     }
-
-    fun getStartupMessage(language: Language): String {
-        return startupMessages[language] ?: startupMessages[Language.ENGLISH]!!
-    }
-
-    fun getNoDetectionMessage(language: Language): String {
-        return noDetectionMessages[language] ?: noDetectionMessages[Language.ENGLISH]!!
-    }
 }

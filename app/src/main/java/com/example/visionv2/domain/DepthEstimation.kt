@@ -4,8 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
 import com.example.visionv2.data.ModelOutput
-import com.example.visionv2.data.PreprocessResult
-import com.example.visionv2.utils.preprocessBitmap
+import com.example.visionv2.utils.preprocessBitmapMidas
 import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.support.common.FileUtil
 import java.nio.MappedByteBuffer
@@ -15,7 +14,6 @@ class DepthEstimation(
 ): Depth {
     private var interpreter: Interpreter
     private val inputShape: IntArray
-    private lateinit var preprocessResult: PreprocessResult
     private lateinit var outputBuffer: Array<Array<Array<FloatArray>>>
 
     init {
@@ -25,11 +23,11 @@ class DepthEstimation(
     }
 
     override fun depth(bitmap: Bitmap, modelOutput: List<ModelOutput>) {
-        preprocessResult = preprocessBitmap(bitmap, 256)
+        val inputBuffer = preprocessBitmapMidas(bitmap)
 
         outputBuffer = Array(1) { Array(256) { Array(256) { FloatArray(1) } } }
 
-        interpreter.run(preprocessResult.inputBuffer, outputBuffer)
+        interpreter.run(inputBuffer, outputBuffer)
         Log.d("Depth", "${outputBuffer[0]}")
 
         assignDepthToObjects(
