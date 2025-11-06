@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
 import com.example.visionv2.data.ModelOutput
+import com.example.visionv2.data.PreprocessResult
 import com.example.visionv2.utils.preprocessBitmapMidas
 import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.support.common.FileUtil
@@ -14,6 +15,8 @@ class DepthEstimation(
 ): Depth {
     private var interpreter: Interpreter
     private val inputShape: IntArray
+
+    private lateinit var preprocessResult: PreprocessResult
     private lateinit var outputBuffer: Array<Array<Array<FloatArray>>>
 
     init {
@@ -23,12 +26,12 @@ class DepthEstimation(
     }
 
     override fun depth(bitmap: Bitmap, modelOutput: List<ModelOutput>) {
-        val inputBuffer = preprocessBitmapMidas(bitmap)
+        preprocessResult = preprocessBitmapMidas(bitmap, 256)
+        val inputBuffer = preprocessResult.inputBuffer
 
         outputBuffer = Array(1) { Array(256) { Array(256) { FloatArray(1) } } }
 
         interpreter.run(inputBuffer, outputBuffer)
-        Log.d("Depth", "${outputBuffer[0]}")
 
         assignDepthToObjects(
             modelOutput,
@@ -40,16 +43,20 @@ class DepthEstimation(
         outputs: List<ModelOutput>,
         depthMap: Array<Array<Array<FloatArray>>>, // [1][256][256]
     ) {
-        val yoloFrameSize = 640f
-        val midasFrameSize = 256f
-        val scale = midasFrameSize / yoloFrameSize
+        val midasFrameSize = 256
 
         val regionSize = 5
         val half = regionSize / 2
 
         for ((index, output) in outputs.withIndex()) {
-            val depthX = (output.centerX * scale).toInt().coerceIn(0, midasFrameSize.toInt() - 1)
-            val depthY = (output.centerY * scale).toInt().coerceIn(0, midasFrameSize.toInt() - 1)
+            val xOrig = output.centerX
+            val yOrig = output.centerY
+            val xOffset = preprocessResult.xOffset
+            val yOffset = preprocessResult.yOffset
+            val scale = preprocessResult.scale
+
+            val depthX = (xOrig * scale + xOffset).toInt().coerceIn(0, midasFrameSize - 1)
+            val depthY = (yOrig * scale + yOffset).toInt().coerceIn(0, midasFrameSize - 1)
 
             Log.d("DepthAssign", "[$index] Original center: (${output.centerX}, ${output.centerY})")
             Log.d("DepthAssign", "[$index] Scaled center: ($depthX, $depthY)")

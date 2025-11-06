@@ -6,7 +6,7 @@ import android.util.Log
 import com.example.visionv2.data.ModelOutput
 import com.example.visionv2.data.PreprocessResult
 import com.example.visionv2.domain.Detector
-import com.example.visionv2.utils.preprocessBitmap
+import com.example.visionv2.utils.preprocessBitmapYolo
 import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.support.common.FileUtil
 import java.nio.MappedByteBuffer
@@ -29,12 +29,13 @@ class ObjectDetectorModel(
 
     override fun detect(bitmap: Bitmap): List<ModelOutput> {
 
-        preprocessResult = preprocessBitmap(bitmap, 640)
+        preprocessResult = preprocessBitmapYolo(bitmap, 640)
+        val inputBuffer = preprocessResult.inputBuffer
         val outputBuffer = Array(1) { Array(25200) { FloatArray(24) } }
 
         try {
             interpreter.runForMultipleInputsOutputs(
-                arrayOf(preprocessResult.inputBuffer),
+                arrayOf(inputBuffer),
                 mapOf(0 to outputBuffer)
             )
         } catch (e: Exception) {
