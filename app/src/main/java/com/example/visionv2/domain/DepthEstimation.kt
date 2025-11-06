@@ -55,6 +55,13 @@ class DepthEstimation(
             val yOffset = preprocessResult.yOffset
             val scale = preprocessResult.scale
 
+            val flatDepthValues = depthMap[0].flatMap { row ->
+                row.map { it[0] }
+            }
+
+            val minVal = flatDepthValues.minOrNull() ?: 0f
+            val maxVal = flatDepthValues.maxOrNull() ?: 1f
+
             val depthX = (xOrig * scale + xOffset).toInt().coerceIn(0, midasFrameSize - 1)
             val depthY = (yOrig * scale + yOffset).toInt().coerceIn(0, midasFrameSize - 1)
 
@@ -68,7 +75,9 @@ class DepthEstimation(
                     val x = (depthX + dx).coerceIn(0, 255)
                     val y = (depthY + dy).coerceIn(0, 255)
                     val depth = depthMap[0][y][x][0]
-                    depthValues.add(depth)
+
+                    val normalizedDepth = ((depth - minVal) / (maxVal - minVal)).coerceIn(0f, 1f)
+                    depthValues.add(normalizedDepth)
                 }
             }
 
