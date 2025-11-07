@@ -8,6 +8,7 @@ import org.tensorflow.lite.support.image.ImageProcessor
 import org.tensorflow.lite.support.image.TensorImage
 import org.tensorflow.lite.support.image.ops.ResizeOp
 import org.tensorflow.lite.support.image.ops.ResizeWithCropOrPadOp
+import kotlin.math.max
 import kotlin.math.min
 
 fun preprocessBitmapYolo(
@@ -53,15 +54,11 @@ fun preprocessBitmapMidas(
     val originalWidth = bitmap.width
     val originalHeight = bitmap.height
 
-    val scale = min(
-        targetSize.toFloat() / originalWidth,
-        targetSize.toFloat() / originalHeight
-    )
-    val newWidth = (originalWidth * scale).toInt()
-    val newHeight = (originalHeight * scale).toInt()
-
-    val xOffset = (targetSize - newWidth) / 2
-    val yOffset = (targetSize - newHeight) / 2
+    val scale = targetSize.toFloat() / max(originalWidth, originalHeight)
+    val newWidth = originalWidth * scale
+    val newHeight = originalHeight * scale
+    val xOffset = (targetSize - newWidth) / 2f
+    val yOffset = (targetSize - newHeight) / 2f
 
     var tensorImage = TensorImage(DataType.FLOAT32)
     tensorImage.load(bitmap)
@@ -82,5 +79,5 @@ fun preprocessBitmapMidas(
 
     val inputBuffer = tensorImage.buffer
 
-    return PreprocessResult(inputBuffer, xOffset, yOffset, scale)
+    return PreprocessResult(inputBuffer, xOffset.toInt(), yOffset.toInt(), scale)
 }

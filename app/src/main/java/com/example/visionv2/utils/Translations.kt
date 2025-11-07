@@ -16,6 +16,12 @@ object Translations {
     private const val CLOSE_THRESHOLD = 500f
     private const val MEDIUM_THRESHOLD = 300f
 
+    private const val THRESHOLD_1M = 0.78f
+    private const val THRESHOLD_1_5M = 0.53f
+    private const val THRESHOLD_2M = 0.32f
+    private const val THRESHOLD_2_5M = 0.18f
+    private const val THRESHOLD_3M = 0.14f
+
     // Label Maps
     private val englishLabelMap = listOf(
         "Sink",
@@ -67,6 +73,15 @@ object Translations {
         "close" to "1.5 to 3 meters away",
         "medium" to "3.5 to 4 meters away",
         "far" to "5 meters away"
+    )
+
+    // Just in case, will change depending on the results of the test
+    private val distanceMap = listOf(
+        "very_close" to "1m away",
+        "close" to "1.5m away",
+        "moderate" to "2m away",
+        "medium" to "2.5m away",
+        "far" to "3m away",
     )
 
     private val filipinoDistanceMap = mapOf(

@@ -76,7 +76,7 @@ class DepthEstimation(
                     val y = (depthY + dy).coerceIn(0, 255)
                     val depth = depthMap[0][y][x][0]
 
-                    val normalizedDepth = ((depth - minVal) / (maxVal - minVal)).coerceIn(0f, 1f)
+                    val normalizedDepth = ((maxVal - depth) / (maxVal - minVal)).coerceIn(0f, 1f)
                     depthValues.add(normalizedDepth)
                 }
             }
