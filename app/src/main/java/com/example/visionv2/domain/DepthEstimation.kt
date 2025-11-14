@@ -16,6 +16,10 @@ class DepthEstimation(
     private var interpreter: Interpreter
     private val inputShape: IntArray
 
+    private val DEPTH_CALIB_A = 0.002222f
+    private val DEPTH_CALIB_B = 0.0001f
+    // -----------------------------------------------------------------
+
     private lateinit var preprocessResult: PreprocessResult
     private lateinit var outputBuffer: Array<Array<Array<FloatArray>>>
 
@@ -41,10 +45,9 @@ class DepthEstimation(
 
     private fun assignDepthToObjects(
         outputs: List<ModelOutput>,
-        depthMap: Array<Array<Array<FloatArray>>>, // [1][256][256]
+        depthMap: Array<Array<Array<FloatArray>>>, // [1][256][256][1]
     ) {
         val midasFrameSize = 256
-
         val regionSize = 5
         val half = regionSize / 2
 
@@ -55,18 +58,8 @@ class DepthEstimation(
             val yOffset = preprocessResult.yOffset
             val scale = preprocessResult.scale
 
-            val flatDepthValues = depthMap[0].flatMap { row ->
-                row.map { it[0] }
-            }
-
-            val minVal = flatDepthValues.minOrNull() ?: 0f
-            val maxVal = flatDepthValues.maxOrNull() ?: 1f
-
             val depthX = (xOrig * scale + xOffset).toInt().coerceIn(0, midasFrameSize - 1)
             val depthY = (yOrig * scale + yOffset).toInt().coerceIn(0, midasFrameSize - 1)
-
-            Log.d("DepthAssign", "[$index] Original center: (${output.centerX}, ${output.centerY})")
-            Log.d("DepthAssign", "[$index] Scaled center: ($depthX, $depthY)")
 
             val depthValues = mutableListOf<Float>()
 
@@ -74,18 +67,26 @@ class DepthEstimation(
                 for (dx in -half..half) {
                     val x = (depthX + dx).coerceIn(0, 255)
                     val y = (depthY + dy).coerceIn(0, 255)
-                    val depth = depthMap[0][y][x][0]
 
-                    val normalizedDepth = ((maxVal - depth) / (maxVal - minVal)).coerceIn(0f, 1f)
-                    depthValues.add(normalizedDepth)
+                    val rawDepth = depthMap[0][y][x][0]
+                    depthValues.add(rawDepth)
                 }
             }
 
             val median = depthValues.sorted()[depthValues.size / 2]
 
-            Log.d("DepthAssign", "[$index] median depth: $median")
+            val inverseDistance = (DEPTH_CALIB_A * median) + DEPTH_CALIB_B
+            val Z_meters: Float
 
-            output.distance.value = median
+            if (inverseDistance > 0.001f) {
+                Z_meters = 1.0f / inverseDistance
+            } else {
+                Z_meters = 10.0f
+            }
+
+            Log.d("METRIC_DISTANCE", "[$index] Raw Value: $median | Est. Distance: ${"%.2f".format(Z_meters)} meters")
+
+            output.distance.value = Z_meters
         }
     }
 }

@@ -12,103 +12,52 @@ object Translations {
         }
     }
 
-    private const val VERY_CLOSE_THRESHOLD = 800f
-    private const val CLOSE_THRESHOLD = 500f
-    private const val MEDIUM_THRESHOLD = 300f
+    private const val FAR_THRESHOLD_M = 4.0f        // > 4 meters range
+    private const val MEDIUM_FAR_THRESHOLD_M = 3.0f // 3 - 4 meters range
+    private const val MEDIUM_THRESHOLD_4 = 2.6f     // 2.6 - 3 meters range
+    private const val MEDIUM_THRESHOLD_3 = 2.1f     // 2.1 - 2.5 meters range
+    private const val MEDIUM_THRESHOLD_2 = 1.6f     // 1.6 - 2 meters range
+    private const val CLOSE_THRESHOLD_M = 1.0f      // 1 - 1.5 meters range
 
-    private const val THRESHOLD_1M = 0.78f
-    private const val THRESHOLD_1_5M = 0.53f
-    private const val THRESHOLD_2M = 0.32f
-    private const val THRESHOLD_2_5M = 0.18f
-    private const val THRESHOLD_3M = 0.14f
-
-    // Label Maps
+    // Label Maps (unchanged)
     private val englishLabelMap = listOf(
-        "Sink",
-        "Traffic light",
-        "Bicycle",
-        "Bus",
-        "Person",
-        "Chair",
-        "Couch",
-        "Door",
-        "Street light",
-        "Bed",
-        "Refrigerator",
-        "Motorcycle",
-        "Table",
-        "Television",
-        "Truck",
-        "Toilet",
-        "Bench",
-        "Car",
-        "Stairs"
+        "Sink", "Traffic light", "Bicycle", "Bus", "Person", "Chair",
+        "Couch", "Door", "Street light", "Bed", "Refrigerator",
+        "Motorcycle", "Table", "Television", "Truck", "Toilet",
+        "Bench", "Car", "Stairs"
     )
 
     private val filipinoLabelMap = listOf(
-        "Lababo",
-        "Ilaw trapiko",
-        "Bisikleta",
-        "Bus",
-        "Tao",
-        "Silya",
-        "Sala",
-        "Pinto",
-        "Ilaw sa kalye",
-        "Kama",
-        "Refrigerator",
-        "Motorsiklo",
-        "Mesa",
-        "Telebisyon",
-        "Trak",
-        "Kubeta",
-        "Bangko",
-        "Kotse",
-        "Hagdan"
+        "Lababo", "Ilaw trapiko", "Bisikleta", "Bus", "Tao", "Silya",
+        "Sala", "Pinto", "Ilaw sa kalye", "Kama", "Refrigerator",
+        "Motorsiklo", "Mesa", "Telebisyon", "Trak", "Kubeta",
+        "Bangko", "Kotse", "Hagdan"
     )
 
-    // Distance descriptions
     private val englishDistanceMap = mapOf(
         "very_close" to "less than 1 meter away",
-        "close" to "1.5 to 3 meters away",
-        "medium" to "3.5 to 4 meters away",
-        "far" to "5 meters away"
-    )
-
-    // Just in case, will change depending on the results of the test
-    private val distanceMap = listOf(
-        "very_close" to "1m away",
-        "close" to "1.5m away",
-        "moderate" to "2m away",
-        "medium" to "2.5m away",
-        "far" to "3m away",
+        "close_1" to "1 to 1.5 meters away",
+        "close_2" to "1.6 to 2 meters away",
+        "medium_3" to "2.1 to 2.5 meters away",
+        "medium_4" to "2.6 to 3 meters away",
+        "medium_far" to "3 to 4 meters away",
+        "far" to "more than 4 meters away"
     )
 
     private val filipinoDistanceMap = mapOf(
         "very_close" to "mas mababa sa isang metro ang layo",
-        "close" to "isa't kalahati hanggang tatlong metro ang layo",
-        "medium" to "tatlo't kalahati hanggang apat na metro ang layo",
-        "far" to "lima o mahigit pang metro ang layo"
+        "close_1" to "isa hanggang isa't kalahating metro ang layo",
+        "close_2" to "isa't anim hanggang dalawang metro ang layo",
+        "medium_3" to "dalawa at isa hanggang dalawa't kalahating metro ang layo",
+        "medium_4" to "dalawa't anim hanggang tatlong metro ang layo",
+        "medium_far" to "tatlo hanggang apat na metro ang layo",
+        "far" to "higit pa sa apat na metro ang layo"
     )
 
-    // Sentence templates
     private val templates = mapOf(
         Language.ENGLISH to "%s detected, %s",
         Language.FILIPINO to "Mayroong %s, %s"
     )
-
-    // Common phrases
-    private val startupMessages = mapOf(
-        Language.ENGLISH to "Welcome to VISION, detecting objects now",
-        Language.FILIPINO to "Maligayang pagdating sa VISION, nagsisimula ang pagtukoy ng mga bagay"
-    )
-
-    private val noDetectionMessages = mapOf(
-        Language.ENGLISH to "No objects detected",
-        Language.FILIPINO to "Walang nakitang bagay"
-    )
-
-    // ---- Retrieval Functions ----
 
     fun getLabel(index: Int, language: Language): String {
         return when (language) {
@@ -119,10 +68,18 @@ object Translations {
 
     fun getDistanceLabel(depthValue: Float, language: Language): String {
         val key = when {
-            depthValue >= VERY_CLOSE_THRESHOLD -> "very_close"
-            depthValue >= CLOSE_THRESHOLD -> "close"
-            depthValue >= MEDIUM_THRESHOLD -> "medium"
-            else -> "far"
+            depthValue >= FAR_THRESHOLD_M -> "far"
+            // 3.0f to 3.99f
+            depthValue >= MEDIUM_FAR_THRESHOLD_M -> "medium_far"
+            // 2.6f to 2.99f
+            depthValue >= MEDIUM_THRESHOLD_4 -> "medium_4"
+            // 2.1f to 2.59f
+            depthValue >= MEDIUM_THRESHOLD_3 -> "medium_3"
+            // 1.6f to 2.09f
+            depthValue >= MEDIUM_THRESHOLD_2 -> "close_2"
+            // 1.0f to 1.59f
+            depthValue >= CLOSE_THRESHOLD_M -> "close_1"
+            else -> "very_close"
         }
 
         return when (language) {
