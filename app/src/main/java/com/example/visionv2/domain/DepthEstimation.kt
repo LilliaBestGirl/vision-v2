@@ -24,16 +24,16 @@ class DepthEstimation(
     private lateinit var outputBuffer: Array<Array<Array<FloatArray>>>
 
     init {
-        val modelFile: MappedByteBuffer = FileUtil.loadMappedFile(context, "midas.tflite")
+        val modelFile: MappedByteBuffer = FileUtil.loadMappedFile(context, "Depth-Anything-V2.tflite")
         interpreter = Interpreter(modelFile)
         inputShape = interpreter.getInputTensor(0).shape()
     }
 
     override fun depth(bitmap: Bitmap, modelOutput: List<ModelOutput>) {
-        preprocessResult = preprocessBitmapMidas(bitmap, 256)
+        preprocessResult = preprocessBitmapMidas(bitmap, 518)
         val inputBuffer = preprocessResult.inputBuffer
 
-        outputBuffer = Array(1) { Array(256) { Array(256) { FloatArray(1) } } }
+        outputBuffer = Array(1) { Array(1) { Array(518) { FloatArray(518) } } }
 
         interpreter.run(inputBuffer, outputBuffer)
 
@@ -47,7 +47,7 @@ class DepthEstimation(
         outputs: List<ModelOutput>,
         depthMap: Array<Array<Array<FloatArray>>>, // [1][256][256][1]
     ) {
-        val midasFrameSize = 256
+        val midasFrameSize = 518
         val regionSize = 5
         val half = regionSize / 2
 
@@ -65,10 +65,10 @@ class DepthEstimation(
 
             for (dy in -half..half) {
                 for (dx in -half..half) {
-                    val x = (depthX + dx).coerceIn(0, 255)
-                    val y = (depthY + dy).coerceIn(0, 255)
+                    val x = (depthX + dx).coerceIn(0, 517)
+                    val y = (depthY + dy).coerceIn(0, 517)
 
-                    val rawDepth = depthMap[0][y][x][0]
+                    val rawDepth = depthMap[0][0][y][x]
                     depthValues.add(rawDepth)
                 }
             }
