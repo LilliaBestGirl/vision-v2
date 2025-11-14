@@ -21,10 +21,10 @@ class DepthEstimation(
     // -----------------------------------------------------------------
 
     private lateinit var preprocessResult: PreprocessResult
-    private lateinit var outputBuffer: Array<Array<Array<FloatArray>>>
+    private lateinit var outputBuffer: Array<Array<Array<ByteArray>>>
 
     init {
-        val modelFile: MappedByteBuffer = FileUtil.loadMappedFile(context, "midas.tflite")
+        val modelFile: MappedByteBuffer = FileUtil.loadMappedFile(context, "Midas-V2_w8a8.tflite")
         interpreter = Interpreter(modelFile)
         inputShape = interpreter.getInputTensor(0).shape()
     }
@@ -33,7 +33,7 @@ class DepthEstimation(
         preprocessResult = preprocessBitmapMidas(bitmap, 256)
         val inputBuffer = preprocessResult.inputBuffer
 
-        outputBuffer = Array(1) { Array(256) { Array(256) { FloatArray(1) } } }
+        outputBuffer = Array(1) { Array(256) { Array(256) { ByteArray(1) } } }
 
         interpreter.run(inputBuffer, outputBuffer)
 
@@ -45,7 +45,7 @@ class DepthEstimation(
 
     private fun assignDepthToObjects(
         outputs: List<ModelOutput>,
-        depthMap: Array<Array<Array<FloatArray>>>, // [1][256][256][1]
+        depthMap: Array<Array<Array<ByteArray>>>, // [1][256][256][1]
     ) {
         val midasFrameSize = 256
         val regionSize = 5
@@ -61,7 +61,7 @@ class DepthEstimation(
             val depthX = (xOrig * scale + xOffset).toInt().coerceIn(0, midasFrameSize - 1)
             val depthY = (yOrig * scale + yOffset).toInt().coerceIn(0, midasFrameSize - 1)
 
-            val depthValues = mutableListOf<Float>()
+            val depthValues = mutableListOf<Byte>()
 
             for (dy in -half..half) {
                 for (dx in -half..half) {

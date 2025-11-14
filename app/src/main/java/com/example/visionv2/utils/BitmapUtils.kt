@@ -60,7 +60,7 @@ fun preprocessBitmapMidas(
     val xOffset = (targetSize - newWidth) / 2f
     val yOffset = (targetSize - newHeight) / 2f
 
-    var tensorImage = TensorImage(DataType.FLOAT32)
+    var tensorImage = TensorImage(DataType.UINT8)
     tensorImage.load(bitmap)
 
     val imageProcessor = ImageProcessor.Builder()
@@ -68,11 +68,11 @@ fun preprocessBitmapMidas(
             maxOf(bitmap.width, bitmap.height),
             maxOf(bitmap.width, bitmap.height)
         ))
-        .add(ResizeOp(targetSize, targetSize, ResizeOp.ResizeMethod.BILINEAR))
-        .add(NormalizeOp(
-            floatArrayOf(0.485f, 0.456f, 0.406f),
-            floatArrayOf(0.229f, 0.224f, 0.225f)
-        ))
+        .add(ResizeOp(targetSize, targetSize, ResizeOp.ResizeMethod.NEAREST_NEIGHBOR))
+//        .add(NormalizeOp(
+//            floatArrayOf(0f, 0f, 0f),  // No need for normalization for UINT8 (just range 0-255)
+//            floatArrayOf(255f, 255f, 255f) // Normalize the pixel values to range [0, 255]
+//        ))
         .build()
 
     tensorImage = imageProcessor.process(tensorImage)
