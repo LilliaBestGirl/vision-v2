@@ -16,9 +16,9 @@ class DepthEstimation(
     private var interpreter: Interpreter
     private val inputShape: IntArray
 
-    private val DEPTH_CALIB_A = 0.002222f
-    private val DEPTH_CALIB_B = 0.0001f
-    // -----------------------------------------------------------------
+    private val OUTPUT_SCALE = 6.514299392700195f
+    private val DEPTH_CALIB_A = 0.012256f
+    private val DEPTH_CALIB_B = 0.102924f
 
     private lateinit var preprocessResult: PreprocessResult
     private lateinit var outputBuffer: Array<Array<Array<ByteArray>>>
@@ -61,21 +61,23 @@ class DepthEstimation(
             val depthX = (xOrig * scale + xOffset).toInt().coerceIn(0, midasFrameSize - 1)
             val depthY = (yOrig * scale + yOffset).toInt().coerceIn(0, midasFrameSize - 1)
 
-            val depthValues = mutableListOf<Byte>()
+            val depthValues = mutableListOf<Int>()
 
             for (dy in -half..half) {
                 for (dx in -half..half) {
                     val x = (depthX + dx).coerceIn(0, 255)
                     val y = (depthY + dy).coerceIn(0, 255)
 
-                    val rawDepth = depthMap[0][y][x][0]
-                    depthValues.add(rawDepth)
+                    val rawDepthInt = depthMap[0][y][x][0].toInt() and 0xFF
+                    depthValues.add(rawDepthInt)
                 }
             }
 
-            val median = depthValues.sorted()[depthValues.size / 2]
+            val medianQuantized = depthValues.sorted()[depthValues.size / 2].toFloat()
 
-            val inverseDistance = (DEPTH_CALIB_A * median) + DEPTH_CALIB_B
+            val relativeDepthValue = OUTPUT_SCALE * medianQuantized
+
+            val inverseDistance = (DEPTH_CALIB_A * relativeDepthValue) + DEPTH_CALIB_B
             val Z_meters: Float
 
             if (inverseDistance > 0.001f) {
@@ -84,7 +86,7 @@ class DepthEstimation(
                 Z_meters = 10.0f
             }
 
-            Log.d("METRIC_DISTANCE", "[$index] Raw Value: $median | Est. Distance: ${"%.2f".format(Z_meters)} meters")
+//            Log.d("METRIC_DISTANCE", "[$index] Raw Value: $median | Est. Distance: ${"%.2f".format(Z_meters)} meters")
 
             output.distance.value = Z_meters
         }
