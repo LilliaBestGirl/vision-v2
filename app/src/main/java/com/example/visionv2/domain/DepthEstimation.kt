@@ -17,6 +17,7 @@ class DepthEstimation(
     private val inputShape: IntArray
 
     private val OUTPUT_SCALE = 6.514299392700195f
+    private val ZERO_POINT = 0.0f
     private val DEPTH_CALIB_A = 0.012256f
     private val DEPTH_CALIB_B = 0.102924f
 
@@ -75,7 +76,7 @@ class DepthEstimation(
 
             val medianQuantized = depthValues.sorted()[depthValues.size / 2].toFloat()
 
-            val relativeDepthValue = OUTPUT_SCALE * medianQuantized
+            val relativeDepthValue = OUTPUT_SCALE * (medianQuantized - ZERO_POINT)
 
             val inverseDistance = (DEPTH_CALIB_A * relativeDepthValue) + DEPTH_CALIB_B
             val Z_meters: Float
@@ -86,9 +87,8 @@ class DepthEstimation(
                 Z_meters = 10.0f
             }
 
-//            Log.d("METRIC_DISTANCE", "[$index] Raw Value: $median | Est. Distance: ${"%.2f".format(Z_meters)} meters")
-
-            output.distance.value = Z_meters
+            // Temporary, change to Z_meters once A and B calibrations are fixed
+            output.distance.value = relativeDepthValue
         }
     }
 }
