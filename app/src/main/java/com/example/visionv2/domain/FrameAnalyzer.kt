@@ -56,6 +56,7 @@ class FrameAnalyzer(
                 }
 
                 if (results.isNotEmpty()) {
+                    sortModelOutputsByDistance(results)
                     val distance = results[0].distance.value ?: 0f
 
                     tts.speakDetection(results[0].classId, distance)
@@ -75,5 +76,14 @@ class FrameAnalyzer(
         val matrix = Matrix()
         matrix.postRotate(degrees)
         return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+    }
+
+    fun sortModelOutputsByDistance(outputs: List<ModelOutput>): List<ModelOutput> {
+        val sortedList = outputs.sortedWith(
+            compareByDescending<ModelOutput> { it.distance.value == null }
+                .thenBy { it.distance.value }
+        )
+
+        return sortedList
     }
 }

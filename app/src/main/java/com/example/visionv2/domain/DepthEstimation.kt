@@ -2,7 +2,6 @@ package com.example.visionv2.domain
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.util.Log
 import com.example.visionv2.data.ModelOutput
 import com.example.visionv2.data.PreprocessResult
 import com.example.visionv2.utils.preprocessBitmapMidas
@@ -18,8 +17,8 @@ class DepthEstimation(
 
     private val OUTPUT_SCALE = 6.514299392700195f
     private val ZERO_POINT = 0.0f
-    private val DEPTH_CALIB_A = 0.012256f
-    private val DEPTH_CALIB_B = 0.102924f
+    private val DEPTH_CALIB_A = 0.001505f
+    private val DEPTH_CALIB_B = -0.1669f
 
     private lateinit var preprocessResult: PreprocessResult
     private lateinit var outputBuffer: Array<Array<Array<ByteArray>>>
@@ -52,7 +51,7 @@ class DepthEstimation(
         val regionSize = 5
         val half = regionSize / 2
 
-        for ((index, output) in outputs.withIndex()) {
+        for ((_, output) in outputs.withIndex()) {
             val xOrig = output.centerX
             val yOrig = output.centerY
             val xOffset = preprocessResult.xOffset
@@ -79,16 +78,16 @@ class DepthEstimation(
             val relativeDepthValue = OUTPUT_SCALE * (medianQuantized - ZERO_POINT)
 
             val inverseDistance = (DEPTH_CALIB_A * relativeDepthValue) + DEPTH_CALIB_B
-            val Z_meters: Float
+            val zMeters: Float
 
             if (inverseDistance > 0.001f) {
-                Z_meters = 1.0f / inverseDistance
+                zMeters = 1.0f / inverseDistance
             } else {
-                Z_meters = 10.0f
+                zMeters = 10.0f
             }
 
             // Temporary, change to Z_meters once A and B calibrations are fixed
-            output.distance.value = relativeDepthValue
+            output.distance.value = zMeters
         }
     }
 }
